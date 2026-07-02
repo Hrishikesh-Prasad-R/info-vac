@@ -105,7 +105,11 @@ export const RunnerStagePanel = memo(function RunnerStagePanel({
             crawledCount++;
             if (payload.item.status === "success") {
               parsedCount++;
-              text = `Scraped contents successfully: ${payload.item.title || payload.item.url}`;
+              if (payload.item.reason === "tavily_fallback") {
+                text = `Scraped successfully (Tavily fallback): ${payload.item.title || payload.item.url}`;
+              } else {
+                text = `Scrape successful: ${payload.item.title || payload.item.url}`;
+              }
             } else {
               const reason = (payload.item.reason || "").toLowerCase();
               if (reason.includes("duplicate")) duplicate++;
@@ -113,7 +117,11 @@ export const RunnerStagePanel = memo(function RunnerStagePanel({
               else if (reason.includes("paywall")) paywall++;
               else blocked++;
               
-              text = `Skipped resource (${payload.item.reason || "blocked/inaccessible"}): ${payload.item.url}`;
+              if (payload.item.reason === "Scrape failed") {
+                text = `Scrape failed: ${payload.item.url}`;
+              } else {
+                text = `Skipped resource (${payload.item.reason || "blocked/inaccessible"}): ${payload.item.url}`;
+              }
               skippedItemsList.push({ url: payload.item.url, reason: payload.item.reason || "blocked/inaccessible" });
             }
           }

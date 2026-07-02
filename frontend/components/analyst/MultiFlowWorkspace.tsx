@@ -45,8 +45,9 @@ function ComparisonResults({
     setPdfLoading(true);
     try {
       await exportComparisonPDF(result, programNames);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(`PDF Export failed: ${err?.message || "Unknown error occurred"}`);
     } finally {
       setPdfLoading(false);
     }
@@ -56,8 +57,9 @@ function ComparisonResults({
     setCsvLoading(true);
     try {
       await exportComparisonCSV(result, programNames);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(`CSV Export failed: ${err?.message || "Unknown error occurred"}`);
     } finally {
       setCsvLoading(false);
     }
@@ -167,31 +169,69 @@ function ComparisonResults({
     ) ?? null;
   }, [drawerUrl, allFields]);
 
-  function renderComparisonParagraphs(text: string) {
-    const paragraphs = text.split(/\n{2,}/);
-    return paragraphs.map((para, i) => {
-      const trimmed = para.trim().replace(/\[[a-zA-Z0-9_]+\]/g, "").replace(/\s{2,}/g, " ");
-      if (!trimmed) return null;
-
-      const segments = splitNarrativeSegments(trimmed, urlMap);
-      return (
-        <p key={i} className="text-xs leading-[1.75] mb-3" style={{ color: "rgba(5,28,44,0.8)" }}>
-          {segments.map((seg, j) =>
-            seg.type === "text" ? (
-              <span key={j}>{seg.text}</span>
-            ) : (
-              <CitationBadge
-                key={j}
-                num={seg.num ?? 1}
-                url={seg.url}
-                onClick={() => seg.url && setDrawerUrl(seg.url)}
-              />
-            )
-          )}
-        </p>
-      );
+  function renderSegmentsWithBold(text: string, urlMapRef: typeof urlMap, key: string) {
+    // Process **bold** and citation refs inline
+    const segments = splitNarrativeSegments(text, urlMapRef);
+    return segments.map((seg, j) => {
+      if (seg.type !== "text") {
+        return (
+          <CitationBadge
+            key={`${key}-cite-${j}`}
+            num={seg.num ?? 1}
+            url={seg.url}
+            onClick={() => seg.url && setDrawerUrl(seg.url)}
+          />
+        );
+      }
+      // Render **bold** spans within text segment
+      const parts = seg.text.split(/(\*\*[^*]+\*\*)/g);
+      return parts.map((part, k) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return <strong key={`${key}-b-${j}-${k}`}>{part.slice(2, -2)}</strong>;
+        }
+        return <span key={`${key}-t-${j}-${k}`}>{part}</span>;
+      });
     });
   }
+
+  function renderComparisonParagraphs(text: string) {
+    // Split on any single or double newline to catch numbered lists on separate lines
+    const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
+    const nodes: React.ReactNode[] = [];
+    let paraBuffer: string[] = [];
+
+    const flushPara = (idx: number) => {
+      if (paraBuffer.length === 0) return;
+      const combined = paraBuffer.join(" ").replace(/\[[a-zA-Z0-9_]+\]/g, "").replace(/\s{2,}/g, " ");
+      nodes.push(
+        <p key={`para-${idx}`} className="text-xs leading-[1.75] mb-3" style={{ color: "rgba(5,28,44,0.8)" }}>
+          {renderSegmentsWithBold(combined, urlMap, `para-${idx}`)}
+        </p>
+      );
+      paraBuffer = [];
+    };
+
+    lines.forEach((line, i) => {
+      // Numbered list items like "1." "2." etc
+      const numMatch = line.match(/^(\d+)\.\s+(.*)$/);
+      if (numMatch) {
+        flushPara(i);
+        const content = numMatch[2].replace(/\[[a-zA-Z0-9_]+\]/g, "").replace(/\s{2,}/g, " ");
+        nodes.push(
+          <p key={`li-${i}`} className="text-xs leading-[1.75] mb-2" style={{ color: "rgba(5,28,44,0.8)" }}>
+            <span className="font-bold mr-1">{numMatch[1]}.</span>
+            {renderSegmentsWithBold(content, urlMap, `li-${i}`)}
+          </p>
+        );
+      } else {
+        paraBuffer.push(line);
+      }
+    });
+    flushPara(lines.length);
+
+    return nodes;
+  }
+
 
   // Loyalty parameters list for side-by-side comparison table
   const keyFieldsList = [
@@ -525,12 +565,11 @@ function ComparisonResults({
                   <table className="min-w-full text-left text-xs">
                     <thead className="font-bold text-white" style={{ backgroundColor: "#051c2c", borderBottom: "1px solid rgba(5,28,44,0.1)" }}>
                       <tr>
-                        <th className="px-4 py-3 w-1/5">Category</th>
+                        <th className="px-4 py-3 w-[15%] text-center">Category</th>
                         {programNames.map((name) => (
-                          <th key={name} className="px-4 py-3 w-1/4">{name}</th>
+                          <th key={name} className="px-4 py-3 w-[25%] text-center">{name}</th>
                         ))}
-                        <th className="px-4 py-3 w-1/5">Category Winner</th>
-                        <th className="px-4 py-3 w-1/10">Evidence</th>
+                        <th className="px-4 py-3 w-[35%] text-center">Key Insight</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y text-xs divide-[#051c2c]/5">
@@ -546,11 +585,10 @@ function ComparisonResults({
                           "Partnerships": { label: "Partner Names", fieldName: "partner_names" }
                         };
                         const repInfo = repFields[item.category] || { label: item.category, fieldName: "notable_unstructured_details" };
-                        const rowWinner = item.rankings?.[0] || "Tie";
                         
                         return (
                           <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f9fafb" }}>
-                            <td className="px-4 py-3 font-semibold align-top w-1/5" style={{ fontFamily: "var(--kobie-font-heading)", color: "#051c2c" }}>
+                            <td className="px-4 py-3 font-semibold align-top w-[15%]" style={{ fontFamily: "var(--kobie-font-heading)", color: "#051c2c" }}>
                               {item.category}
                               <span className="block text-[8px] font-mono mt-0.5" style={{ color: "rgba(5,28,44,0.4)" }}>{repInfo.label}</span>
                             </td>
@@ -558,40 +596,38 @@ function ComparisonResults({
                             {programNames.map((_, pIdx) => {
                               const field = comparedData[pIdx]?.fields.find(f => f.field_name === repInfo.fieldName);
                               const val = field?.field_value || "—";
+                              const num = field?.source_url ? urlMap.get(field.source_url) : null;
                               return (
-                                <td key={pIdx} className="px-4 py-3 align-top leading-relaxed w-1/4" style={{ color: "rgba(5,28,44,0.7)" }}>
+                                <td key={pIdx} className="px-4 py-3 align-top leading-relaxed w-[25%]" style={{ color: "rgba(5,28,44,0.7)" }}>
                                   {val}
+                                  {num && (
+                                    <CitationBadge
+                                      num={num}
+                                      url={field?.source_url}
+                                      onClick={() => field?.source_url && setDrawerUrl(field.source_url)}
+                                    />
+                                  )}
                                 </td>
                               );
                             })}
 
-                            <td className="px-4 py-3 align-top w-1/5">
-                              <span className="inline-block text-[9px] font-bold px-2 py-0.5 rounded" style={{
-                                backgroundColor: rowWinner !== "Tie" ? "rgba(253,127,79,0.12)" : "rgba(5,28,44,0.05)",
-                                color: rowWinner !== "Tie" ? "#fd7f4f" : "rgba(5,28,44,0.5)",
-                                border: rowWinner !== "Tie" ? "1px solid rgba(253,127,79,0.25)" : "1px solid rgba(5,28,44,0.08)"
-                              }}>
-                                {rowWinner === "Tie" ? "Tie" : `🏆 ${rowWinner.split(' ')[0]}`}
-                              </span>
-                            </td>
-
-                            <td className="px-4 py-3 align-top w-1/10">
+                            <td className="px-4 py-3 align-top w-[35%] leading-relaxed text-[11px]" style={{ color: "rgba(5,28,44,0.8)" }}>
                               {(() => {
-                                const winnerIdx = programNames.indexOf(rowWinner);
-                                if (winnerIdx !== -1) {
-                                  const field = comparedData[winnerIdx]?.fields.find(f => f.field_name === repInfo.fieldName);
-                                  const num = field?.source_url ? urlMap.get(field.source_url) : null;
-                                  if (num) {
-                                    return (
-                                      <CitationBadge
-                                        num={num}
-                                        url={field?.source_url}
-                                        onClick={() => field?.source_url && setDrawerUrl(field.source_url)}
-                                      />
-                                    );
-                                  }
-                                }
-                                return <span className="text-black/20">—</span>;
+                                const trimmed = (item.rationale || "").trim().replace(/\[[a-zA-Z0-9_]+\]/g, "").replace(/\s{2,}/g, " ");
+                                if (!trimmed) return <span className="text-black/20">—</span>;
+                                const segments = splitNarrativeSegments(trimmed, urlMap);
+                                return segments.map((seg, j) =>
+                                  seg.type === "text" ? (
+                                    <span key={j}>{seg.text}</span>
+                                  ) : (
+                                    <CitationBadge
+                                      key={j}
+                                      num={seg.num ?? 1}
+                                      url={seg.url}
+                                      onClick={() => seg.url && setDrawerUrl(seg.url)}
+                                    />
+                                  )
+                                );
                               })()}
                             </td>
                           </tr>
@@ -615,9 +651,9 @@ function ComparisonResults({
                   <table className="min-w-full text-left text-xs">
                     <thead className="font-bold text-white" style={{ backgroundColor: "#051c2c", borderBottom: "1px solid rgba(5,28,44,0.1)" }}>
                       <tr>
-                        <th className="px-4 py-3 w-1/4">Loyalty Parameter</th>
+                        <th className="px-4 py-3 w-1/4 text-center">Loyalty Parameter</th>
                         {programNames.map((name) => (
-                          <th key={name} className="px-4 py-3 w-3/8">{name}</th>
+                          <th key={name} className="px-4 py-3 w-3/8 text-center">{name}</th>
                         ))}
                       </tr>
                     </thead>

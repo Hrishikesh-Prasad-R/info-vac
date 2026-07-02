@@ -42,7 +42,7 @@ function HighlightedName({ name, query }: { name: string; query: string }) {
   return (
     <span>
       {name.slice(0, idx)}
-      <mark className="bg-[rgba(253,127,79,0.15)] text-[#fd7f4f] rounded px-0.5 not-italic font-semibold">
+      <mark className="rounded px-0.5 not-italic font-semibold" style={{ backgroundColor: "rgba(253,127,79,0.15)", color: "#fd7f4f" }}>
         {name.slice(idx, idx + query.length)}
       </mark>
       {name.slice(idx + query.length)}

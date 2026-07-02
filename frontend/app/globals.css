@@ -183,6 +183,11 @@
     outline: 2px solid var(--kobie-coral);
     outline-offset: 2px;
   }
+
+  mark {
+    background-color: transparent;
+    color: inherit;
+  }
 }
 
 /* ═══════════════════════════════════════════════

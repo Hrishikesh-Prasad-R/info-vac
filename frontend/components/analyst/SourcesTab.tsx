@@ -62,8 +62,8 @@ export function SourcesTab({ programId }: SourcesTabProps) {
     };
   }, [programId]);
 
-  const succeeded = sources.filter((s) => s.fetch_status === "success");
-  const failed = sources.filter((s) => s.fetch_status !== "success");
+  const succeeded = sources.filter((s) => s.fetch_status === "success" || s.fetch_status === "tavily_fallback");
+  const failed = sources.filter((s) => s.fetch_status !== "success" && s.fetch_status !== "tavily_fallback");
 
   if (loading) {
     return (
@@ -117,7 +117,7 @@ export function SourcesTab({ programId }: SourcesTabProps) {
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
               {/* Status icon */}
-              {src.fetch_status === "success" ? (
+              {src.fetch_status === "success" || src.fetch_status === "tavily_fallback" ? (
                 <CheckCircle2 size={14} className="shrink-0" style={{ color: '#10b981' }} />
               ) : (
                 <XCircle size={14} className="shrink-0" style={{ color: '#ef4444' }} />

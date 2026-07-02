@@ -39,7 +39,7 @@ function HighlightedContent({
   return (
     <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "rgba(255, 255, 255, 0.9)" }}>
       {before}
-      <mark className="bg-[rgba(253,127,79,0.18)] text-[#fd7f4f] rounded px-0.5 not-italic font-bold">
+      <mark className="rounded px-0.5 not-italic font-bold" style={{ backgroundColor: "rgba(253,127,79,0.18)", color: "#fd7f4f" }}>
         {highlighted}
       </mark>
       {after}

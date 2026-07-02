@@ -26,14 +26,22 @@ class APIKeyBroker:
     def get_key(self) -> str:
         """
         Thread-safe checkout of the next available healthy key.
-        Blocks until a key becomes eligible.
+        Blocks until a key becomes eligible or raises an error if all are in cooldown.
         """
         if not self.keys:
             raise ValueError("No API keys configured in the broker.")
             
+        start_time = time.time()
         while True:
             with self.lock:
                 now = time.time()
+                
+                # Check if all keys are currently in cooldown. If so, don't wait
+                any_active = any(k["cooldown_until"] <= now for k in self.keys)
+                if not any_active:
+                    min_cooldown_remaining = min(k["cooldown_until"] - now for k in self.keys)
+                    raise ValueError(f"All API keys are in cooldown. Minimum wait: {min_cooldown_remaining:.1f}s")
+                
                 # Find keys that are out of cooldown AND satisfy rate limit spacing
                 eligible = [
                     k for k in self.keys
@@ -47,6 +55,9 @@ class APIKeyBroker:
                     self.local_data.last_key = best["key"]
                     return best["key"]
                     
+            if time.time() - start_time > 5.0:
+                raise TimeoutError("Timeout waiting for an eligible API key due to rate limit spacing.")
+                
             # Wait briefly to check again
             time.sleep(0.1)
 

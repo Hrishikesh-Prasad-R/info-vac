@@ -1,16 +1,16 @@
-# Graph Report - KOBIE_hackathon  (2026-07-02)
+# Graph Report - KOBIE_hackathon  (2026-07-01)
 
 ## Corpus Check
-- 138 files · ~98,349 words
+- 137 files · ~95,810 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1312 nodes · 2317 edges · 127 communities (116 shown, 11 thin omitted)
+- 1301 nodes · 2302 edges · 122 communities (110 shown, 12 thin omitted)
 - Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 131 edges (avg confidence: 0.57)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `76db998e`
+- Built from commit: `b3108827`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -102,15 +102,10 @@
 - [[_COMMUNITY_Community 113|Community 113]]
 - [[_COMMUNITY_Community 114|Community 114]]
 - [[_COMMUNITY_Community 115|Community 115]]
-- [[_COMMUNITY_Community 116|Community 116]]
 - [[_COMMUNITY_Community 117|Community 117]]
 - [[_COMMUNITY_Community 119|Community 119]]
-- [[_COMMUNITY_Community 120|Community 120]]
 - [[_COMMUNITY_Community 121|Community 121]]
-- [[_COMMUNITY_Community 122|Community 122]]
 - [[_COMMUNITY_Community 123|Community 123]]
-- [[_COMMUNITY_Community 124|Community 124]]
-- [[_COMMUNITY_Community 126|Community 126]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `cn()` - 88 edges
@@ -125,16 +120,16 @@
 10. `compute_confidence()` - 18 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `test_pipeline_emits_events_in_order()` --calls--> `ExtractedValue`  [INFERRED]
-  tests/test_orchestrator_unit.py → backend/extraction_schemas.py
-- `test_retry_on_timeout()` --calls--> `ExtractedValue`  [INFERRED]
-  tests/test_orchestrator_unit.py → backend/extraction_schemas.py
-- `test_pipeline_emits_events_in_order()` --calls--> `DigitalExperience`  [INFERRED]
-  tests/test_orchestrator_unit.py → backend/extraction_schemas.py
-- `test_retry_on_timeout()` --calls--> `DigitalExperience`  [INFERRED]
-  tests/test_orchestrator_unit.py → backend/extraction_schemas.py
-- `test_pipeline_emits_events_in_order()` --calls--> `TierSystem`  [INFERRED]
-  tests/test_orchestrator_unit.py → backend/extraction_schemas.py
+- `DummyExtractedSchema` --uses--> `GateResult`  [INFERRED]
+  tests/test_comprehensive_system.py → backend/gate.py
+- `DummyProgramBasics` --uses--> `GateResult`  [INFERRED]
+  tests/test_comprehensive_system.py → backend/gate.py
+- `_call_llm_judge()` --calls--> `_make_client()`  [INFERRED]
+  orchestrator/nodes.py → backend/llm_client.py
+- `_call_llm()` --calls--> `_make_client()`  [INFERRED]
+  tests/eval_ragas.py → backend/llm_client.py
+- `DummyExtractedSchema` --uses--> `PipelineState`  [INFERRED]
+  tests/test_comprehensive_system.py → orchestrator/state.py
 
 ## Import Cycles
 - 1-file cycle: `backend/qdrant_client.py -> backend/qdrant_client.py`
@@ -153,19 +148,19 @@
 - **Multi-Agent LangGraph Pipeline** — backend_retriever, backend_extractor, backend_gate, backend_verifier, backend_narrator [EXTRACTED 1.00]
 - **Data Persistence & Vector Search** — backend_models, postgres_db, backend_qdrant_client [INFERRED 0.90]
 
-## Communities (127 total, 11 thin omitted)
+## Communities (122 total, 12 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.15
-Nodes (31): MarketMatrixOutput, MatrixItem, Comparator — Phase 6.  Generates a strategic competitive comparison between mult, Rankings and rationale for a single loyalty program category., Structured competitive market matrix comparison., ExtractedFieldResponse, ProgramCreate, ProgramResponse (+23 more)
+Cohesion: 0.19
+Nodes (32): MarketMatrixOutput, MatrixItem, Comparator — Phase 6.  Generates a strategic competitive comparison between mult, Rankings and rationale for a single loyalty program category., Structured competitive market matrix comparison., CompareRequest, ExtractedFieldResponse, PipelineEventResponse (+24 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.12
-Nodes (24): BurnMechanics, CompetitivePosition, EarnMechanics, EvidenceState, ExtractedSchema, MemberSentiment, Partnerships, ProgramBasics (+16 more)
+Cohesion: 0.07
+Nodes (56): BurnMechanics, CompetitivePosition, DigitalExperience, EarnMechanics, EvidenceState, EvidenceStateValue, ExtractedSchema, ExtractedValue (+48 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.04
-Nodes (47): Toaster(), dependencies, ai, @base-ui/react, class-variance-authority, clsx, cmdk, lucide-react (+39 more)
+Nodes (45): dependencies, ai, @base-ui/react, class-variance-authority, clsx, cmdk, lucide-react, next (+37 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.09
@@ -173,7 +168,7 @@ Nodes (38): compute_confidence(), _corroboration_score(), _detect_contradiction(
 
 ### Community 4 - "Community 4"
 Cohesion: 0.08
-Nodes (29): AsyncClient, classify_source(), Source Classifier.  Classifies fetched sources into specific category groups usi, Classify source_type using a four-level priority chain.      Priority (highest t, _async_firecrawl_fetch(), _Candidate, _check_robots(), clean_utf8_mojibake() (+21 more)
+Nodes (30): AsyncClient, classify_source(), Source Classifier.  Classifies fetched sources into specific category groups usi, Classify source_type using a four-level priority chain.      Priority (highest t, _async_firecrawl_fetch(), _Candidate, _check_robots(), clean_utf8_mojibake() (+22 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.10
@@ -184,20 +179,20 @@ Cohesion: 0.09
 Nodes (29): _build_context(), _calculate_usage_cost(), _call_narrator(), _count_words(), generate_narrative(), Any, AsyncSession, ExtractedField (+21 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.14
-Nodes (21): AdminDashboard(), deriveStats(), ComparatorPicker(), ConfidenceBarChart(), ConfidenceBarChartProps, CostCard(), CostCardProps, COLORS (+13 more)
+Cohesion: 0.10
+Nodes (27): AdminDashboard(), deriveStats(), ComparatorPicker(), ComparatorPickerProps, ConfidenceBarChart(), ConfidenceBarChartProps, CostCard(), CostCardProps (+19 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.12
 Nodes (9): DropdownMenuCheckboxItem(), DropdownMenuContent(), DropdownMenuItem(), DropdownMenuLabel(), DropdownMenuRadioItem(), DropdownMenuSeparator(), DropdownMenuShortcut(), DropdownMenuSubContent() (+1 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.10
-Nodes (33): create_program(), get_chat_history(), get_comparison(), get_comparison_chat_history(), get_narrative(), get_program(), get_program_events(), get_program_fields() (+25 more)
+Cohesion: 0.08
+Nodes (35): get_db(), AsyncSession, FastAPI dependency — yields an async DB session., create_comparison(), create_program(), get_chat_history(), get_comparison(), get_comparison_chat_history() (+27 more)
 
 ### Community 10 - "Community 10"
 Cohesion: 0.17
-Nodes (11): 🧪 58. Instructor Smoke Test (`scripts/instructor_smoke.py`), ⚙️ 59. Container Settings (`docker-compose.yml` & `Dockerfile`), 🔬 60. Pytest asynchronous boundaries (`pytest.ini`), 📟 61. Service Orchestrations (`start.ps1` & `setup.bat` & `start.bat`), Cool Features & Surprises:, Cool Features & Surprises:, Cool Features & Surprises:, Cool Features & Surprises: (+3 more)
+Nodes (11): ⏱️ 56. Pipeline Event Scopes (`scratch/why_failed.py`), 📋 57. Program List Printer (`scratch/list_programs.py`), 🧪 58. Instructor Smoke Test (`scripts/instructor_smoke.py`), 📟 61. Service Orchestrations (`start.ps1` & `setup.bat` & `start.bat`), Cool Features & Surprises:, Cool Features & Surprises:, Cool Features & Surprises:, Cool Features & Surprises: (+3 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.09
@@ -220,32 +215,32 @@ Cohesion: 0.14
 Nodes (16): ProgramName, Instructor + Gemini smoke test — Phase 0.  Demonstrates that:   1. Instructor wr, Single-field model — simplest possible extraction target., run_smoke_test(), _get_asyncpg_conn(), Phase 0 Definition-of-Done tests.  All five tests must pass for Phase 0 to be, DoD: that UUID is a real row in programs., DoD: standalone script → one Instructor+Gemini call returns valid parsed Pydanti (+8 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.11
-Nodes (27): BriefView(), BriefViewProps, NarrativeSection, CitationBadge(), CitationBadgeProps, ComparisonExportButton(), ComparisonExportButtonProps, EvidenceDrawer() (+19 more)
+Cohesion: 0.13
+Nodes (23): BriefView(), BriefViewProps, NarrativeSection, EvidenceDrawer(), createSharedStyles(), ExportBarProps, exportComparisonPDF(), exportPDF() (+15 more)
 
 ### Community 17 - "Community 17"
 Cohesion: 0.20
 Nodes (6): DialogContent(), DialogDescription(), DialogFooter(), DialogHeader(), DialogOverlay(), DialogTitle()
 
 ### Community 18 - "Community 18"
-Cohesion: 0.16
-Nodes (17): DigitalExperience, EvidenceStateValue, ExtractedValue, MetaInsights, Category 4: Digital Experience, Null out store ratings whose parsed numeric value is outside 0–5., Category 7: Tier System, Auto-correct tier_count when it contradicts the length of tier_names. (+9 more)
+Cohesion: 0.15
+Nodes (11): ComparisonExportButtonProps, SOURCE_TYPE_LABELS, SourcesTab(), SourcesTabProps, ChangelogItem, ChatHistory, ChatResponse, Comparison (+3 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.18
-Nodes (12): ChatWidget(), ChatWidgetProps, COMPARATIVE_QUICK_PROMPTS, getFollowUpSuggestions(), SINGLE_QUICK_PROMPTS, EvolutionTab(), EvolutionTabProps, Badge() (+4 more)
+Cohesion: 0.13
+Nodes (15): ChatWidget(), ChatWidgetProps, COMPARATIVE_QUICK_PROMPTS, getFollowUpSuggestions(), SINGLE_QUICK_PROMPTS, CitationBadge(), CitationBadgeProps, ComparisonExportButton() (+7 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.11
-Nodes (30): SOURCE_TYPE_LABELS, SourcesTab(), SourcesTabProps, WorkspacePhase, UseSSEOptions, UseSSEReturn, apiFetch(), comparePrograms() (+22 more)
+Cohesion: 0.17
+Nodes (21): WorkspacePhase, UseSSEOptions, UseSSEReturn, apiFetch(), comparePrograms(), createProgram(), getChatHistory(), getComparison() (+13 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.14
-Nodes (23): get_db(), make_background_session(), AsyncSession, Database connection — async SQLAlchemy engine + session factory., FastAPI dependency — yields an async DB session., NullPool session for background pipeline tasks.      Creates a brand-new engin, emit_event(), Pipeline event emission and program status helpers.  Separated from nodes.py so (+15 more)
+Cohesion: 0.13
+Nodes (20): make_background_session(), Database connection — async SQLAlchemy engine + session factory., NullPool session for background pipeline tasks.      Creates a brand-new engine, find_best_source_for_quote(), Scan ALL fetched sources to find where evidence_quote best matches.      Called, ensure_collection(), get_qdrant_client(), Ensure the Qdrant collection exists for storing source chunks.      Upgraded for (+12 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.15
-Nodes (9): ComparatorPickerProps, SimilarProgramsModal(), SimilarProgramsModalProps, InputRowProps, ProgramInput(), ProgramInputProps, Button(), buttonVariants (+1 more)
+Cohesion: 0.18
+Nodes (6): SimilarProgramsModal(), SimilarProgramsModalProps, InputRowProps, ProgramInput(), ProgramInputProps, Program
 
 ### Community 23 - "Community 23"
 Cohesion: 0.22
@@ -256,8 +251,8 @@ Cohesion: 0.14
 Nodes (17): list_all_fields(), Return latest extracted fields across all programs., Filters a list of ExtractedField objects, keeping only the latest run for each f, _build_golden_qa(), _build_ragas_llm(), _call_llm(), _fetch_program_data(), Any (+9 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.15
-Nodes (16): Embed query, compute sparse TF-IDF, and execute Qdrant RRF hybrid search., _sync_search_qdrant(), embed_texts(), Convert a list of text chunks into vector embeddings using Google's API with key, _call_llm_judge(), Verify if the quote is semantically present in context, allowing minor formattin, Verify that when a source_type is specified, Qdrant FieldCondition is built., Verify that embed_texts rotates keys if the first one throws an exception. (+8 more)
+Cohesion: 0.18
+Nodes (14): Embed query, compute sparse TF-IDF, and execute Qdrant RRF hybrid search., _sync_search_qdrant(), embed_texts(), Convert a list of text chunks into vector embeddings using Google's API with key, _call_llm_judge(), Verify if the quote is semantically present in context, allowing minor formattin, Verify that when a source_type is specified, Qdrant FieldCondition is built., Verify that embed_texts rotates keys if the first one throws an exception. (+6 more)
 
 ### Community 26 - "Community 26"
 Cohesion: 0.11
@@ -277,7 +272,7 @@ Nodes (5): Phase 4 orchestrator — live e2e test.  Requires:   - docker compose
 
 ### Community 30 - "Community 30"
 Cohesion: 0.11
-Nodes (25): AnalystWorkspace(), ExportBar(), MultiFlowWorkspace(), ALL_FIELDS, CATEGORY_FIELDS, PipelineTracker(), PipelineTrackerProps, COMPARISON_STEPS (+17 more)
+Nodes (26): AnalystWorkspace(), EvolutionTab(), EvolutionTabProps, ExportBar(), ALL_FIELDS, CATEGORY_FIELDS, PipelineTracker(), PipelineTrackerProps (+18 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.33
@@ -296,8 +291,8 @@ Cohesion: 0.15
 Nodes (12): 1. Environment Setup, 1. The Multi-Agent Pipeline (Backend), 2. High-Density UI Workspace (Frontend), 2. Installation (Automated Setup), 3. Running the Platform (Single-Click), 🕸️ Codebase Knowledge Graph (Graphify), InfoVac — Autonomous Competitive Intelligence Platform, Prerequisites (+4 more)
 
 ### Community 54 - "Community 54"
-Cohesion: 0.18
-Nodes (12): iter_fields(), PipelineState, Pipeline state definition and field iteration helpers., Yield (category_key, field_name, ev_dict) for every field in the schema.      Ar, Shared state flowing through the LangGraph pipeline.      All values must be JSO, _make_state(), Phase 4 orchestrator — unit tests (no live marker).  Tests:   test_pipeline_e, iter_fields must return every category×field combination. (+4 more)
+Cohesion: 0.17
+Nodes (15): extract_node(), narrate_node(), Generate the analyst brief from gate-verified extracted_fields.      Non-block, iter_fields(), PipelineState, Pipeline state definition and field iteration helpers., Yield (category_key, field_name, ev_dict) for every field in the schema.      Ar, Shared state flowing through the LangGraph pipeline.      All values must be JSO (+7 more)
 
 ### Community 55 - "Community 55"
 Cohesion: 0.22
@@ -324,12 +319,12 @@ Cohesion: 0.22
 Nodes (8): 1. CSS Stylesheet (`kobie-theme.css`), 20. Code Boilerplate (Copy-Paste Foundations), 2. Scaffold Template (`index.html`), 6. Component Library, Image/Video Poster Playback Block, Kobie Design System: Visual Language & Frontend Audit, Primary Buttons, Solution & Feature Cards
 
 ### Community 82 - "Community 82"
-Cohesion: 0.15
-Nodes (21): find_best_source_for_quote(), gate_verify(), gate_verify_batch(), GateResult, Citation-Verification Gate — Phase 2.  Every non-null field extracted by the Ext, Verify multiple fields against one source in a single call.      Args:         f, Scan ALL fetched sources to find where evidence_quote best matches.      Called, Result of a single gate verification. (+13 more)
+Cohesion: 0.20
+Nodes (16): gate_verify(), gate_verify_batch(), Verify multiple fields against one source in a single call.      Args:         f, Verify that `evidence_quote` is textually present in `source_raw_content`., Phase 2 Gate — unit tests.  Pure function tests — no marker needed (no API calls, Gate correctly rejects an injected hallucinated value — Phase 2 DoD., test_batch_verify(), test_custom_threshold() (+8 more)
 
 ### Community 83 - "Community 83"
-Cohesion: 0.11
-Nodes (16): _get_gemini_keys(), Returns a list of all configured Gemini keys, checking GEMINI_API_KEYS and singl, APIKeyBroker, Thread-safe key manager that load-balances key usage and tracks failures., Thread-safe checkout of the next available healthy key.         Blocks until a, Stall an API key if it fails., Report failure on the key that was last checked out in the current thread., FallbackChat (+8 more)
+Cohesion: 0.08
+Nodes (25): chunk_text(), _get_gemini_keys(), Split raw text into semantic chunks for vector search., Returns a list of all configured Gemini keys, checking GEMINI_API_KEYS and singl, APIKeyBroker, Thread-safe key manager that load-balances key usage and tracks failures., Thread-safe checkout of the next available healthy key.         Blocks until a k, Stall an API key if it fails. (+17 more)
 
 ### Community 84 - "Community 84"
 Cohesion: 0.29
@@ -348,8 +343,8 @@ Cohesion: 0.29
 Nodes (7): 🖥️ 20. Workspace Home (`frontend/app/page.tsx`), 📊 21. Admin Dashboard (`frontend/app/admin/page.tsx`), 🎨 22. App Layout (`frontend/app/layout.tsx`), Cool Features & Surprises:, Cool Features & Surprises:, Cool Features & Surprises:, InfoVac Codebase Surprises & Engineering Audit (Part 7: App Gateway Pages)
 
 ### Community 88 - "Community 88"
-Cohesion: 0.31
-Nodes (9): gate_verify_multi_source(), Verify each segment of evidence_quote against ALL available sources.          Re, get_public_trace_url(), Make the LangSmith run public and return the shareable link., Public entry point called by FastAPI background task.      Runs the full LangG, run_pipeline(), verify_node(), Comprehensive System Integration Test.          Covers:       1. Graph Node Exec (+1 more)
+Cohesion: 0.15
+Nodes (19): gate_verify_multi_source(), GateResult, Citation-Verification Gate — Phase 2.  Every non-null field extracted by the Ext, Verify each segment of evidence_quote against ALL available sources.          Re, Result of a single gate verification., Update programs.trace_url with a public LangSmith tracing URL.          Robust t, set_trace_url(), build_graph() (+11 more)
 
 ### Community 89 - "Community 89"
 Cohesion: 0.29
@@ -376,12 +371,12 @@ Cohesion: 0.29
 Nodes (7): 🌐 7. Web Crawler (`backend/retriever.py`), 📊 8. Comparative Engine (`backend/comparator.py`), 📝 9. Analyst Brief Narrator (`backend/narrator.py`), Cool Features & Surprises:, Cool Features & Surprises:, Cool Features & Surprises:, InfoVac Codebase Surprises & Engineering Audit (Part 3: Retrieval & Synthesis)
 
 ### Community 95 - "Community 95"
-Cohesion: 0.18
-Nodes (15): _build_source_message(), _calculate_usage_cost(), _extract_category(), extract_fields(), _extract_html_tables(), Any, BaseModel, Extractor — Phase 2 & 8 Upgrades.  Extracts the 44-field loyalty program schema (+7 more)
+Cohesion: 0.40
+Nodes (5): Progress(), ProgressIndicator(), ProgressLabel(), ProgressTrack(), ProgressValue()
 
 ### Community 96 - "Community 96"
-Cohesion: 0.48
-Nodes (5): chunk_text(), Split raw text into semantic chunks for vector search., test_chunk_text_empty(), test_chunk_text_preserves_sentences(), test_chunk_text_splits_large_text()
+Cohesion: 0.40
+Nodes (5): ⚙️ 59. Container Settings (`docker-compose.yml` & `Dockerfile`), 🔬 60. Pytest asynchronous boundaries (`pytest.ini`), Cool Features & Surprises:, Cool Features & Surprises:, InfoVac Codebase Surprises & Engineering Audit (Part 19: Root Settings and Containers)
 
 ### Community 97 - "Community 97"
 Cohesion: 0.40
@@ -459,10 +454,6 @@ Nodes (5): 9. Navigation UX, How to recreate it, What it is, What psychological 
 Cohesion: 0.29
 Nodes (6): db_session(), AsyncSession, Shared pytest fixtures for InfoVac tests.  Key design decision: NullPool. asyncp, Fresh NullPool engine + session per test — no cross-loop asyncpg issues., Insert a Program row; delete it (+ cascaded sources) after each test., temp_program()
 
-### Community 116 - "Community 116"
-Cohesion: 0.38
-Nodes (6): ensure_collection(), get_qdrant_client(), Ensure the Qdrant collection exists for storing source chunks.      Upgraded for, QdrantClient, Qdrant dense search for the question — returns top 5 text chunks., _retrieve_context()
-
 ### Community 117 - "Community 117"
 Cohesion: 0.16
 Nodes (10): EvidenceDrawerProps, ScrollArea(), ScrollBar(), Sheet(), SheetContent(), SheetDescription(), SheetFooter(), SheetHeader() (+2 more)
@@ -471,49 +462,29 @@ Nodes (10): EvidenceDrawerProps, ScrollArea(), ScrollBar(), Sheet(), SheetConten
 Cohesion: 0.21
 Nodes (12): col, columns, FieldsGridProps, Input(), Table(), TableBody(), TableCaption(), TableCell() (+4 more)
 
-### Community 120 - "Community 120"
-Cohesion: 0.40
-Nodes (5): ⏱️ 56. Pipeline Event Scopes (`scratch/why_failed.py`), 📋 57. Program List Printer (`scratch/list_programs.py`), Cool Features & Surprises:, Cool Features & Surprises:, InfoVac Codebase Surprises & Engineering Audit (Part 17: Local Scratchpad Scanners)
-
-### Community 121 - "Community 121"
-Cohesion: 0.20
-Nodes (8): Avatar(), AvatarBadge(), AvatarFallback(), AvatarGroup(), AvatarGroupCount(), AvatarImage(), Label(), Separator()
-
-### Community 122 - "Community 122"
-Cohesion: 0.40
-Nodes (5): 📄 62. Consolidated Exporter (`frontend/components/analyst/ExportBar.tsx`), ⚡ 63. Deferred UI Rendering (`frontend/components/analyst/BriefView.tsx` & `frontend/lib/narrative.ts`), Cool Features & Surprises:, Cool Features & Surprises:, InfoVac Codebase Surprises & Engineering Audit (Part 21: Consolidated Exports & UI Optimization)
-
 ### Community 123 - "Community 123"
-Cohesion: 0.16
-Nodes (20): AlertAction(), AlertTitle(), CardAction(), CardDescription(), CardFooter(), Progress(), ProgressIndicator(), ProgressLabel() (+12 more)
-
-### Community 124 - "Community 124"
-Cohesion: 0.50
-Nodes (4): get_program_evolution(), AsyncSession, UUID, Analyze changes in program fields over time (oldest run vs. newest run).
-
-### Community 126 - "Community 126"
-Cohesion: 0.67
-Nodes (3): CompareRequest, create_comparison(), Run a strategic comparison between multiple completed programs.      All progr
+Cohesion: 0.22
+Nodes (16): Avatar(), AvatarBadge(), AvatarFallback(), AvatarGroup(), AvatarGroupCount(), AvatarImage(), SelectContent(), SelectGroup() (+8 more)
 
 ## Knowledge Gaps
-- **345 isolated node(s):** `inter`, `roboto`, `geistMono`, `metadata`, `$schema` (+340 more)
+- **342 isolated node(s):** `inter`, `roboto`, `geistMono`, `metadata`, `$schema` (+337 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `Community 123` to `Community 7`, `Community 8`, `Community 17`, `Community 19`, `Community 117`, `Community 22`, `Community 119`, `Community 121`, `Community 30`?**
-  _High betweenness centrality (0.036) - this node is a cross-community bridge._
+- **Why does `cn()` connect `Community 123` to `Community 7`, `Community 8`, `Community 16`, `Community 17`, `Community 117`, `Community 119`, `Community 121`, `Community 30`, `Community 95`?**
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+- **Why does `dependencies` connect `Community 2` to `Community 7`?**
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
 - **Are the 15 inferred relationships involving `Program` (e.g. with `ChatRequest` and `ChatResponse`) actually correct?**
   _`Program` has 15 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 15 inferred relationships involving `ExtractedField` (e.g. with `ChatRequest` and `ChatResponse`) actually correct?**
   _`ExtractedField` has 15 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `Add raw_html TEXT column to sources table.      Stores up to 80K chars of raw HT`, `Add citation_start and citation_end columns to extracted_fields.      Used to st`, `Add total_cost column to programs table.      Tracks accumulated LLM API cost in` to the rest of the system?**
-  _532 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.1484480431848853 - nodes in this community are weakly interconnected._
+  _529 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.11692307692307692 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06610259122157588 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.041666666666666664 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.043478260869565216 - nodes in this community are weakly interconnected._

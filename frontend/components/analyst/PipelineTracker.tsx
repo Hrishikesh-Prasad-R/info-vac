@@ -243,7 +243,7 @@ export function PipelineTracker({ events, isDegraded, isConnected }: PipelineTra
     <div className="w-full max-w-2xl mx-auto space-y-4" style={{ fontFamily: 'var(--kobie-font-body)' }}>
       {isDegraded && (
         <Alert variant="destructive" className="py-2 rounded-[8px]">
-          <AlertDescription className="text-xs font-medium" style={{ color: '#fbbf24' }}>
+          <AlertDescription className="text-xs font-medium" style={{ color: '#fd7f4f' }}>
             Connection unstable — falling back to backup polling updates.
           </AlertDescription>
         </Alert>

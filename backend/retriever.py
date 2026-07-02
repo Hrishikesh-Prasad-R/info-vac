@@ -487,9 +487,14 @@ async def discover_sources(
                         raise ValueError("Stealth browser extraction returned empty content")
                 except Exception as fallback_exc:
                     log.warning("playwright_scraping_failed_falling_back_to_tavily", url=candidate.url, error=str(fallback_exc)[:200])
-                    raw_content = candidate.tavily_snippet
-                    fetch_method = "tavily_snippet"
-                    fetch_status = "tavily_fallback"
+                    if candidate.tavily_snippet and candidate.tavily_snippet.strip():
+                        raw_content = candidate.tavily_snippet
+                        fetch_method = "tavily_snippet"
+                        fetch_status = "tavily_fallback"
+                    else:
+                        raw_content = ""
+                        fetch_method = "tavily_snippet"
+                        fetch_status = "failed"
 
             raw_content_cleaned = clean_utf8_mojibake(raw_content)
             title_cleaned = clean_utf8_mojibake(candidate.title) if candidate.title else None
@@ -518,8 +523,8 @@ async def discover_sources(
                     if existing:
                         stored.append(existing)
 
-            status_str = "success" if fetch_status == "success" else "failed"
-            reason_str = "" if fetch_status == "success" else f"Scrape failed ({fetch_status})"
+            status_str = "success" if fetch_status in ("success", "tavily_fallback") else "failed"
+            reason_str = "tavily_fallback" if fetch_status == "tavily_fallback" else ("" if fetch_status == "success" else "Scrape failed")
             item = {
                 "url": candidate.url,
                 "status": status_str,

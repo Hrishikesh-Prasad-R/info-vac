@@ -17,8 +17,9 @@ export function ComparisonExportButton({ comparison, programNames }: ComparisonE
     setLoading(true);
     try {
       await exportComparisonPDF(comparison, programNames);
-    } catch (err) {
+    } catch (err: any) {
       console.error("PDF generation failed:", err);
+      alert(`PDF generation failed: ${err?.message || "Unknown error occurred"}`);
     } finally {
       setLoading(false);
     }

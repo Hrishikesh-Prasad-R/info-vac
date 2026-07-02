@@ -44,6 +44,7 @@ export default function AnalystWorkspace() {
   const closeExpandedPanel = useCallback(() => setExpandedRunnerId(null), []);
 
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [recentComparisons, setRecentComparisons] = useState<string[][]>([]);
 
   useEffect(() => {
     const saved = localStorage.getItem("infovac_recent_searches");
@@ -54,6 +55,14 @@ export default function AnalystWorkspace() {
         setRecentSearches([]);
       }
     }
+    const savedComparisons = localStorage.getItem("infovac_recent_comparisons");
+    if (savedComparisons) {
+      try {
+        setRecentComparisons(JSON.parse(savedComparisons));
+      } catch {
+        setRecentComparisons([]);
+      }
+    }
   }, []);
 
   const addRecentSearch = useCallback((name: string) => {
@@ -61,6 +70,17 @@ export default function AnalystWorkspace() {
       const filtered = prev.filter((item) => item.toLowerCase() !== name.toLowerCase());
       const updated = [name, ...filtered].slice(0, 5);
       localStorage.setItem("infovac_recent_searches", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const addRecentComparison = useCallback((names: string[]) => {
+    setRecentComparisons((prev) => {
+      const filtered = prev.filter(
+        (item) => JSON.stringify(item.map(n => n.toLowerCase()).sort()) !== JSON.stringify(names.map(n => n.toLowerCase()).sort())
+      );
+      const updated = [names, ...filtered].slice(0, 5);
+      localStorage.setItem("infovac_recent_comparisons", JSON.stringify(updated));
       return updated;
     });
   }, []);
@@ -248,6 +268,7 @@ export default function AnalystWorkspace() {
     if (Array.isArray(input)) {
       const names = input.map(n => n.trim()).filter(Boolean);
       names.forEach(addRecentSearch);
+      addRecentComparison(names);
       setSearchQuery(names.join(", "));
       setIsMultiFlow(true);
       setComparisonResult(null);
@@ -452,7 +473,7 @@ export default function AnalystWorkspace() {
       {/* ── Main Content ── */}
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-8">
 
-        {phase === "idle" && !comparisonResult && !isComparing && (
+        {phase === "idle" && !comparisonResult && !isComparing && (!isMultiFlow || multiRunners.length === 0) && (
           <div className="space-y-6 pt-2 kobie-reveal max-w-4xl mx-auto">
             
             {/* Widescreen Unified Search Console Card */}
@@ -512,102 +533,191 @@ export default function AnalystWorkspace() {
 
             <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.08)" }} />
 
-            {/* Popular Analyses Database Preview (Rich Cards) */}
+            {/* Popular Analyses / Comparisons Preview */}
             <div className="space-y-3.5 text-left">
               <h4 className="text-[10px] font-bold uppercase tracking-wider pl-1" style={{ color: "#fd7f4f", fontFamily: "var(--kobie-font-heading)", letterSpacing: "0.05em" }}>
-                Popular Analyses
+                {isMultiFlow ? "Popular Comparisons" : "Popular Analyses"}
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { name: "Starbucks Rewards", emoji: "☕", stars: "★★★★★", sources: 39, status: "Verified", updated: "Updated today" },
-                  { name: "Marriott Bonvoy", emoji: "🏨", stars: "★★★★☆", sources: 42, status: "Verified", updated: "Updated yesterday" },
-                  { name: "Delta SkyMiles", emoji: "✈️", stars: "★★★★☆", sources: 27, status: "Verified", updated: "Updated 2d ago" },
-                  { name: "Sephora Beauty Insider", emoji: "💄", stars: "★★★★★", sources: 31, status: "Verified", updated: "Updated 3d ago" }
-                ].map((item) => (
-                  <div
-                    key={item.name}
-                    onClick={() => handleSubmit(item.name)}
-                    className="p-4 rounded-[10px] cursor-pointer transition-all duration-300 border flex flex-col justify-between h-36 group relative overflow-hidden"
-                    style={{
-                      backgroundColor: "rgba(255,255,255,0.015)",
-                      borderColor: "rgba(255,255,255,0.05)",
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = "rgba(253,127,79,0.6)";
-                      e.currentTarget.style.backgroundColor = "rgba(253,127,79,0.03)";
-                      e.currentTarget.style.transform = "translateY(-4px)";
-                      e.currentTarget.style.boxShadow = "0 8px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(253, 127, 79, 0.15)";
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
-                      e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.015)";
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
-                  >
-                    <div className="space-y-1 text-left">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-lg">{item.emoji}</span>
-                        <span className="text-[10px] font-mono text-[#fd7f4f] tracking-wider">{item.stars}</span>
-                      </div>
-                      <p className="text-xs font-black text-white truncate pt-1 group-hover:text-[#fd7f4f] transition-colors">{item.name}</p>
-                      <p className="text-[9px] text-white/30 leading-none">{item.updated}</p>
-                    </div>
-                    <div className="flex items-center justify-between text-[9px] pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-                      <span style={{ color: "rgba(255,255,255,0.35)" }}>{item.sources} Sources · <span className="text-emerald-400 font-bold">{item.status}</span></span>
-                      <span className="text-[#fd7f4f] font-bold opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0">Open →</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Continue Working / History */}
-            {recentSearches.length > 0 && (
-              <div className="space-y-3 pt-2 text-left">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-white/40 pl-1" style={{ fontFamily: "var(--kobie-font-heading)", letterSpacing: "0.05em" }}>
-                  Continue Working
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {recentSearches.map((term) => (
+              
+              {isMultiFlow ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { nameA: "Sephora Beauty Insider", nameB: "Ulta Beauty", label: "Sephora vs. Ulta", emojiA: "💄", emojiB: "💅", subtitle: "Beauty Retail Showdown", tag: "58 Sources · Verified" },
+                    { nameA: "Starbucks Rewards", nameB: "Dunkin' Rewards", label: "Starbucks vs. Dunkin'", emojiA: "☕", emojiB: "🍩", subtitle: "Coffee Loyalty Battle", tag: "51 Sources · Verified" },
+                    { nameA: "Marriott Bonvoy", nameB: "Hilton Honors", label: "Marriott vs. Hilton", emojiA: "🏨", emojiB: "🌴", subtitle: "Hotel Rewards Giants", tag: "63 Sources · Verified" },
+                    { nameA: "Delta SkyMiles", nameB: "United MileagePlus", label: "Delta vs. United", emojiA: "✈️", emojiB: "🌎", subtitle: "Airline Mileage Comparison", tag: "48 Sources · Verified" }
+                  ].map((item) => (
                     <div
-                      key={term}
-                      onClick={() => handleSubmit(term)}
-                      className="p-3 rounded-[6px] border flex items-center justify-between cursor-pointer transition-all duration-200 group"
+                      key={item.label}
+                      onClick={() => handleSubmit([item.nameA, item.nameB])}
+                      className="p-4 rounded-[10px] cursor-pointer transition-all duration-300 border flex flex-col justify-between h-36 group relative overflow-hidden"
                       style={{
-                        backgroundColor: "rgba(255,255,255,0.02)",
-                        borderColor: "rgba(255,255,255,0.06)",
+                        backgroundColor: "rgba(255,255,255,0.015)",
+                        borderColor: "rgba(255,255,255,0.05)",
                       }}
                       onMouseEnter={e => {
-                        e.currentTarget.style.borderColor = "rgba(253,127,79,0.45)";
-                        e.currentTarget.style.backgroundColor = "rgba(253,127,79,0.02)";
-                        e.currentTarget.style.transform = "translateX(2px)";
+                        e.currentTarget.style.borderColor = "rgba(253,127,79,0.6)";
+                        e.currentTarget.style.backgroundColor = "rgba(253,127,79,0.03)";
+                        e.currentTarget.style.transform = "translateY(-4px)";
+                        e.currentTarget.style.boxShadow = "0 8px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(253, 127, 79, 0.15)";
                       }}
                       onMouseLeave={e => {
-                        e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
-                        e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.02)";
-                        e.currentTarget.style.transform = "translateX(0)";
+                        e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
+                        e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.015)";
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "none";
                       }}
                     >
-                      <div className="flex items-center gap-2 truncate pr-2">
-                        <span className="text-[10px] text-white/35 font-mono">📁</span>
-                        <span className="text-xs font-bold text-white truncate group-hover:text-[#fd7f4f] transition-colors">{term}</span>
+                      <div className="space-y-1 text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{item.emojiA}</span>
+                          <span className="text-xs text-white/30">vs</span>
+                          <span className="text-lg">{item.emojiB}</span>
+                        </div>
+                        <p className="text-xs font-black text-white truncate pt-1 group-hover:text-[#fd7f4f] transition-colors">{item.label}</p>
+                        <p className="text-[9px] text-white/35 leading-none">{item.subtitle}</p>
                       </div>
-                      <span className="text-[10px] text-[#fd7f4f] font-semibold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Open →</span>
+                      <div className="flex items-center justify-between text-[9px] pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                        <span style={{ color: "rgba(255,255,255,0.35)" }}>{item.tag}</span>
+                        <span className="text-[#fd7f4f] font-bold opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0">Compare →</span>
+                      </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { name: "Starbucks Rewards", emoji: "☕", stars: "★★★★★", sources: 39, status: "Verified", updated: "Updated today" },
+                    { name: "Marriott Bonvoy", emoji: "🏨", stars: "★★★★☆", sources: 42, status: "Verified", updated: "Updated yesterday" },
+                    { name: "Delta SkyMiles", emoji: "✈️", stars: "★★★★☆", sources: 27, status: "Verified", updated: "Updated 2d ago" },
+                    { name: "Sephora Beauty Insider", emoji: "💄", stars: "★★★★★", sources: 31, status: "Verified", updated: "Updated 3d ago" }
+                  ].map((item) => (
+                    <div
+                      key={item.name}
+                      onClick={() => handleSubmit(item.name)}
+                      className="p-4 rounded-[10px] cursor-pointer transition-all duration-300 border flex flex-col justify-between h-36 group relative overflow-hidden"
+                      style={{
+                        backgroundColor: "rgba(255,255,255,0.015)",
+                        borderColor: "rgba(255,255,255,0.05)",
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.borderColor = "rgba(253,127,79,0.6)";
+                        e.currentTarget.style.backgroundColor = "rgba(253,127,79,0.03)";
+                        e.currentTarget.style.transform = "translateY(-4px)";
+                        e.currentTarget.style.boxShadow = "0 8px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(253, 127, 79, 0.15)";
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
+                        e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.015)";
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    >
+                      <div className="space-y-1 text-left">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-lg">{item.emoji}</span>
+                          <span className="text-[10px] font-mono text-[#fd7f4f] tracking-wider">{item.stars}</span>
+                        </div>
+                        <p className="text-xs font-black text-white truncate pt-1 group-hover:text-[#fd7f4f] transition-colors">{item.name}</p>
+                        <p className="text-[9px] text-white/30 leading-none">{item.updated}</p>
+                      </div>
+                      <div className="flex items-center justify-between text-[9px] pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                        <span style={{ color: "rgba(255,255,255,0.35)" }}>{item.sources} Sources · <span className="text-emerald-400 font-bold">{item.status}</span></span>
+                        <span className="text-[#fd7f4f] font-bold opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0">Open →</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Continue Working / History */}
+            {isMultiFlow ? (
+              recentComparisons.length > 0 && (
+                <div className="space-y-3 pt-2 text-left">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-white/40 pl-1" style={{ fontFamily: "var(--kobie-font-heading)", letterSpacing: "0.05em" }}>
+                    Continue Comparison
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {recentComparisons.map((pair) => (
+                      <div
+                        key={pair.join("-")}
+                        onClick={() => handleSubmit(pair)}
+                        className="p-3 rounded-[6px] border flex items-center justify-between cursor-pointer transition-all duration-200 group"
+                        style={{
+                          backgroundColor: "rgba(255,255,255,0.02)",
+                          borderColor: "rgba(255,255,255,0.06)",
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.borderColor = "rgba(253,127,79,0.45)";
+                          e.currentTarget.style.backgroundColor = "rgba(253,127,79,0.02)";
+                          e.currentTarget.style.transform = "translateX(2px)";
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
+                          e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.02)";
+                          e.currentTarget.style.transform = "translateX(0)";
+                        }}
+                      >
+                        <div className="flex items-center gap-2 truncate pr-2">
+                          <span className="text-[10px] text-white/35 font-mono">⚔️</span>
+                          <span className="text-xs font-bold text-white truncate group-hover:text-[#fd7f4f] transition-colors">{pair.join(" vs ")}</span>
+                        </div>
+                        <span className="text-[10px] text-[#fd7f4f] font-semibold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Load →</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            ) : (
+              recentSearches.length > 0 && (
+                <div className="space-y-3 pt-2 text-left">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-white/40 pl-1" style={{ fontFamily: "var(--kobie-font-heading)", letterSpacing: "0.05em" }}>
+                    Continue Working
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {recentSearches.map((term) => (
+                      <div
+                        key={term}
+                        onClick={() => handleSubmit(term)}
+                        className="p-3 rounded-[6px] border flex items-center justify-between cursor-pointer transition-all duration-200 group"
+                        style={{
+                          backgroundColor: "rgba(255,255,255,0.02)",
+                          borderColor: "rgba(255,255,255,0.06)",
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.borderColor = "rgba(253,127,79,0.45)";
+                          e.currentTarget.style.backgroundColor = "rgba(253,127,79,0.02)";
+                          e.currentTarget.style.transform = "translateX(2px)";
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
+                          e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.02)";
+                          e.currentTarget.style.transform = "translateX(0)";
+                        }}
+                      >
+                        <div className="flex items-center gap-2 truncate pr-2">
+                          <span className="text-[10px] text-white/35 font-mono">📁</span>
+                          <span className="text-xs font-bold text-white truncate group-hover:text-[#fd7f4f] transition-colors">{term}</span>
+                        </div>
+                        <span className="text-[10px] text-[#fd7f4f] font-semibold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Open →</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
             )}
 
-            {/* Recently Added (Ready for Review) */}
+            {/* Recently Added / Completed Programs */}
             {allPrograms.filter(p => p.status === "complete").length > 0 && (
               <div className="space-y-3 pt-6 text-left" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                 <div>
                   <h4 className="text-[10px] font-bold uppercase tracking-wider pl-1" style={{ color: "#fd7f4f", fontFamily: "var(--kobie-font-heading)", letterSpacing: "0.05em" }}>
-                    Recently Added
+                    {isMultiFlow ? "Completed Programs" : "Recently Added"}
                   </h4>
-                  <p className="text-[10px] text-white/35 pl-1">Instantly load completed workspace results for recently crawled programs.</p>
+                  <p className="text-[10px] text-white/35 pl-1">
+                    {isMultiFlow ? "Select programs to compare or view their individual workspace." : "Instantly load completed workspace results for recently crawled programs."}
+                  </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {allPrograms.filter(p => p.status === "complete").slice(0, 3).map((p) => {
@@ -616,7 +726,14 @@ export default function AnalystWorkspace() {
                     return (
                       <div
                         key={p.id}
-                        onClick={() => isMultiFlow ? handleSubmit(p.name) : handleSelectExisting(p)}
+                        onClick={() => {
+                          if (isMultiFlow) {
+                            // If comparing, clicking adds/sets it as input or starts a comparison
+                            handleSubmit(p.name);
+                          } else {
+                            handleSelectExisting(p);
+                          }
+                        }}
                         className="p-4 rounded-[10px] cursor-pointer transition-all duration-300 border flex flex-col justify-between h-28 group relative"
                         style={{
                           backgroundColor: "rgba(255,255,255,0.015)",
@@ -643,7 +760,9 @@ export default function AnalystWorkspace() {
                           <p className="text-[9px] text-white/35 mt-1">Crawled: {dateStr}</p>
                         </div>
                         <div className="flex items-center justify-between text-[9px] pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-                          <span className="text-[#fd7f4f] font-bold opacity-0 group-hover:opacity-100 transition-opacity">Open Workspace →</span>
+                          <span className="text-[#fd7f4f] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                            {isMultiFlow ? "Add to Comparison →" : "Open Workspace →"}
+                          </span>
                           <span className="text-emerald-400 font-mono text-[8px] font-bold border border-emerald-500/10 px-1.5 py-0.5 rounded bg-emerald-500/5">VERIFIED</span>
                         </div>
                       </div>
@@ -656,7 +775,7 @@ export default function AnalystWorkspace() {
         )}
 
         {/* Fallback rendering of ProgramInput when active results are loaded */}
-        {(phase !== "idle" || comparisonResult || isComparing) && (
+        {(phase !== "idle" || comparisonResult || isComparing || (isMultiFlow && multiRunners.length > 0)) && (
           <div className="max-w-2xl">
             <ProgramInput
               key={programId ?? "new"}
