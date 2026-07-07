@@ -1,3 +1,11 @@
+---
+title: Infovac Backend
+emoji: 🚀
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+---
 # InfoVac — Autonomous Competitive Intelligence Platform
 
 InfoVac is a high-performance, consulting-grade multi-agentic platform built to autonomously scrape, extract, verify, analyze, and compare loyalty program structures. It combines a state-of-the-art **FastAPI + LangGraph** backend with a modern **Next.js 15 (React 19)** frontend designed around high-density, minimal-distraction enterprise user experience guidelines.
