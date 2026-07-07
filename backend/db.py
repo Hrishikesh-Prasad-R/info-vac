@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+
 _raw_db_url = os.getenv(
     "DATABASE_URL",
     "postgresql+asyncpg://infovac:infovac_dev@localhost:5432/infovac",
@@ -17,9 +19,31 @@ if _raw_db_url.startswith("postgres://"):
     _raw_db_url = _raw_db_url.replace("postgres://", "postgresql+asyncpg://", 1)
 elif _raw_db_url.startswith("postgresql://"):
     _raw_db_url = _raw_db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-DATABASE_URL = _raw_db_url
 
-engine = create_async_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
+# Handle sslmode parameter for asyncpg
+parsed = urlparse(_raw_db_url)
+queries = parse_qs(parsed.query)
+
+connect_args = {}
+if "sslmode" in queries:
+    sslmode = queries.pop("sslmode")[0]
+    if sslmode in ("require", "prefer", "allow", "verify-ca", "verify-full"):
+        connect_args["ssl"] = True
+
+# Re-serialize the URL without the sslmode query parameter to prevent asyncpg TypeError
+new_query = urlencode(queries, doseq=True)
+DATABASE_URL = urlunparse(
+    (
+        parsed.scheme,
+        parsed.netloc,
+        parsed.path,
+        parsed.params,
+        new_query,
+        parsed.fragment,
+    )
+)
+
+engine = create_async_engine(DATABASE_URL, echo=False, pool_pre_ping=True, connect_args=connect_args)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 
@@ -37,11 +61,12 @@ async def make_background_session():
     reuse. Slightly slower than pooling but safe for long-running background
     tasks that may outlive the request that launched them.
     """
-    bg_engine = create_async_engine(DATABASE_URL, echo=False, poolclass=NullPool)
+    bg_engine = create_async_engine(DATABASE_URL, echo=False, poolclass=NullPool, connect_args=connect_args)
     factory = async_sessionmaker(bg_engine, expire_on_commit=False, class_=AsyncSession)
     try:
         async with factory() as session:
             yield session
     finally:
         await bg_engine.dispose()
+
 
