@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "InfoVac — Competitive Intelligence",
+  title: "InfoVac",
   description:
     "Autonomous loyalty program competitive intelligence. Discover sources, extract 44 fields, verify every claim.",
   keywords: "loyalty program, competitive intelligence, analyst, InfoVac",
