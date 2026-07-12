@@ -459,6 +459,29 @@ function VerificationCenterTab({ fields }: { fields: ExtractedField[] }) {
   const conflicts = fields.filter(f => f.contradiction_flag);
   const unknowns = fields.filter(f => f.is_null);
 
+  // Evidence Coverage: how many verified fields vs expected per category
+  const CATEGORY_FIELD_COUNTS: Record<string, number> = {
+    program_basics:      6,
+    partnerships:        5,
+    earn_mechanics:      5,
+    digital_experience:  6,
+    burn_mechanics:      6,
+    member_sentiment:    5,
+    tier_system:         6,
+    competitive_position:5,
+    meta_insights:       1,
+  };
+
+  const coverageByCategory = Object.entries(CATEGORY_FIELD_COUNTS).map(([cat, total]) => {
+    const verifiedCount = verified.filter(f => f.category === cat).length;
+    const pct = verifiedCount / total;
+    const level = pct >= 0.7 ? "High" : pct >= 0.4 ? "Medium" : "Low";
+    const color = pct >= 0.7 ? "#10b981" : pct >= 0.4 ? "#fbbf24" : "#ef4444";
+    const bgColor = pct >= 0.7 ? "rgba(16,185,129,0.08)" : pct >= 0.4 ? "rgba(251,191,36,0.08)" : "rgba(239,68,68,0.08)";
+    const borderColor = pct >= 0.7 ? "rgba(16,185,129,0.2)" : pct >= 0.4 ? "rgba(251,191,36,0.2)" : "rgba(239,68,68,0.2)";
+    return { cat, verifiedCount, total, level, color, bgColor, borderColor };
+  }).filter(c => fields.some(f => f.category === c.cat)); // only show categories with any data
+
   return (
     <div className="space-y-6 text-left">
       {/* Overview Stats Row */}
@@ -477,8 +500,42 @@ function VerificationCenterTab({ fields }: { fields: ExtractedField[] }) {
         </div>
       </div>
 
+      {/* Evidence Coverage Section */}
+      {coverageByCategory.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider" style={{ fontFamily: "var(--kobie-font-heading)", color: "rgba(255,255,255,0.5)" }}>
+            Evidence Coverage
+          </h3>
+          <p className="text-[10px] text-white/30 italic -mt-1">
+            How complete the AI's research is per category — based on verified fields vs expected schema fields.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {coverageByCategory.map(({ cat, verifiedCount, total, level, color, bgColor, borderColor }) => (
+              <div
+                key={cat}
+                className="flex items-center justify-between px-3 py-2 rounded"
+                style={{ backgroundColor: bgColor, border: `1px solid ${borderColor}` }}
+              >
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-white/80 uppercase tracking-wide">
+                    {cat.replace(/_/g, " ")}
+                  </span>
+                  <span className="text-[9px] font-mono text-white/35">{verifiedCount} / {total} fields</span>
+                </div>
+                <span
+                  className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-[3px]"
+                  style={{ color, backgroundColor: `${color}18`, border: `1px solid ${color}40` }}
+                >
+                  {level}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Contradictions & Conflicts Section */}
-      <div className="space-y-3">
+      <div className="space-y-3 pt-4 border-t border-white/5">
         <h3 className="text-xs font-bold uppercase tracking-wider text-white/50 animate-pulse" style={{ fontFamily: "var(--kobie-font-heading)", color: "#fd7f4f" }}>
           Contradictions Resolved ({conflicts.length})
         </h3>

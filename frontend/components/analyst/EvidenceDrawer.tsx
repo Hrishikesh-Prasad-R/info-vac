@@ -1,6 +1,7 @@
 "use client";
 
-import { ExternalLink, Calendar } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, Calendar, ChevronDown, ChevronRight } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -57,6 +58,7 @@ function MetaRow({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function EvidenceDrawer({ open, onClose, sourceUrl, field }: EvidenceDrawerProps) {
+  const [scoreExpanded, setScoreExpanded] = useState(false);
   // Format access_date nicely
   const accessDate = field?.access_date
     ? new Date(field.access_date).toLocaleDateString("en-GB", {
@@ -66,18 +68,68 @@ export function EvidenceDrawer({ open, onClose, sourceUrl, field }: EvidenceDraw
       })
     : null;
 
-  const domain = sourceUrl ? sourceUrl.split("/")[2] || "" : "";
-  const isOfficial = domain.includes("starbucks.com") || domain.includes("dunkin") || domain.includes("marriott") || domain.includes("hilton") || domain.includes("hyatt") || domain.includes("delta") || domain.includes("united") || domain.includes("target") || domain.includes("sephora") || domain.includes("ulta");
-  
-  let sourceType = "Official Website";
-  if (sourceUrl.toLowerCase().includes("faq")) sourceType = "Official FAQ";
-  else if (sourceUrl.toLowerCase().includes("terms") || sourceUrl.toLowerCase().includes("legal") || sourceUrl.toLowerCase().includes("rules")) sourceType = "Terms & Conditions";
-  else if (sourceUrl.toLowerCase().includes("news") || sourceUrl.toLowerCase().includes("press")) sourceType = "Press Release";
-  else if (sourceUrl.toLowerCase().includes("forum") || sourceUrl.toLowerCase().includes("reddit")) sourceType = "Community Forum";
-  else if (sourceUrl.toLowerCase().includes("apple.com") || sourceUrl.toLowerCase().includes("play.google")) sourceType = "Mobile App Store";
+  // ── Source type: use real DB value, fall back to URL sniffing only if null ──
+  const SOURCE_TYPE_LABELS: Record<string, string> = {
+    tnc:        "Terms & Conditions",
+    faq:        "Official FAQ",
+    homepage:   "Official Website",
+    press:      "Press Release",
+    news:       "News Coverage",
+    app_review: "App Store Listing",
+    forum:      "Community Forum",
+    benefits:   "Benefits Page",
+    mechanics:  "Mechanics Page",
+    partners:   "Partners Page",
+    competitors:"Competitor Coverage",
+  };
 
-  const authority = isOfficial || sourceType.includes("Terms") || sourceType.includes("FAQ") ? "Primary Authority" : "Secondary Resource";
-  const verification = field?.gate_passed ? "Cross-confirmed by 3 sources" : "Single source verified";
+  // ── Authority tier: derived from the real source_type ──
+  const AUTHORITY_LABELS: Record<string, string> = {
+    tnc:        "Primary Authority",
+    faq:        "Primary Authority",
+    homepage:   "Primary Authority",
+    press:      "Brand Press Release",
+    news:       "Third-party Coverage",
+    app_review: "App Store Listing",
+    forum:      "Community Forum",
+    benefits:   "Primary Authority",
+    mechanics:  "Primary Authority",
+    partners:   "Primary Authority",
+    competitors:"Third-party Coverage",
+  };
+
+  let sourceType: string;
+  let authority: string;
+
+  if (field?.source_type) {
+    // Use the real source_type from the DB
+    sourceType = SOURCE_TYPE_LABELS[field.source_type] ?? field.source_type;
+    authority  = AUTHORITY_LABELS[field.source_type] ?? "Secondary Resource";
+  } else {
+    // Legacy fallback: URL pattern sniffing (for fields without source_type)
+    const url = sourceUrl.toLowerCase();
+    if (url.includes("faq"))                                               { sourceType = "Official FAQ";        authority = "Primary Authority"; }
+    else if (url.includes("terms") || url.includes("legal") || url.includes("rules")) { sourceType = "Terms & Conditions"; authority = "Primary Authority"; }
+    else if (url.includes("news") || url.includes("press"))               { sourceType = "Press Release";       authority = "Brand Press Release"; }
+    else if (url.includes("forum") || url.includes("reddit"))             { sourceType = "Community Forum";     authority = "Community Forum"; }
+    else if (url.includes("apple.com") || url.includes("play.google"))    { sourceType = "Mobile App Store";   authority = "App Store Listing"; }
+    else                                                                    { sourceType = "Official Website";    authority = "Secondary Resource"; }
+  }
+
+  // ── Verification: use corroboration_score from DB instead of fake hardcoded string ──
+  let verification: string;
+  if (!field?.gate_passed) {
+    verification = "Not gate-verified";
+  } else if (field.corroboration_score == null) {
+    verification = "Gate-verified";
+  } else if (field.corroboration_score >= 0.5) {
+    verification = "High corroboration across sources";
+  } else if (field.corroboration_score >= 0.2) {
+    verification = "Corroborated by multiple sources";
+  } else {
+    verification = "Single source verified";
+  }
+
   const usedIn = field ? `${field.category} > ${field.field_name.replace(/_/g, ' ')}` : "Executive Summary & Matrices";
 
   return (
@@ -124,24 +176,75 @@ export function EvidenceDrawer({ open, onClose, sourceUrl, field }: EvidenceDraw
                     }
                   />
                   {field.confidence != null && (
-                    <MetaRow
-                      label="Confidence"
-                      value={
-                        <span
-                           className="font-bold"
-                          style={{
-                            color:
-                              field.confidence >= 0.6
-                                ? "#10b981"
-                                : field.confidence >= 0.4
-                                ? "#fbbf24"
-                                : "#ef4444"
-                          }}
-                        >
-                          {(field.confidence * 100).toFixed(0)}%
+                    <>
+                      {/* Confidence row — clickable to expand sub-scores */}
+                      <button
+                        className="w-full flex items-center justify-between py-2.5 border-b text-left"
+                        style={{ borderColor: "rgba(255,255,255,0.06)", cursor: "pointer" }}
+                        onClick={() => setScoreExpanded(v => !v)}
+                      >
+                        <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--kobie-font-heading)" }}>
+                          Confidence
                         </span>
-                      }
-                    />
+                        <span className="flex items-center gap-1.5">
+                          <span
+                            className="font-bold text-[11px]"
+                            style={{
+                              color:
+                                field.confidence >= 0.6
+                                  ? "#10b981"
+                                  : field.confidence >= 0.4
+                                  ? "#fbbf24"
+                                  : "#ef4444"
+                            }}
+                          >
+                            {(field.confidence * 100).toFixed(0)}%
+                          </span>
+                          {scoreExpanded
+                            ? <ChevronDown size={10} strokeWidth={2} style={{ color: "rgba(255,255,255,0.3)" }} />
+                            : <ChevronRight size={10} strokeWidth={2} style={{ color: "rgba(255,255,255,0.3)" }} />
+                          }
+                        </span>
+                      </button>
+                      {/* Sub-scores breakdown — visible when expanded */}
+                      {scoreExpanded && (
+                        <div className="py-2 space-y-2 px-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                          {([
+                            { label: "Corroboration", val: field.corroboration_score, tip: "Fraction of sources that agreed on this value" },
+                            { label: "Authority",     val: field.authority_score,     tip: "Weight given to the source type (official > forum)" },
+                            { label: "Recency",       val: field.recency_score,       tip: "How recently the source was published" },
+                          ] as const).map(({ label, val, tip }) => (
+                            <div key={label} className="flex items-center justify-between" title={tip}>
+                              <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.3)" }}>
+                                {label}
+                              </span>
+                              {val != null ? (
+                                <div className="flex items-center gap-2">
+                                  {/* Mini bar */}
+                                  <div className="w-16 h-1 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.08)" }}>
+                                    <div
+                                      className="h-full rounded-full"
+                                      style={{
+                                        width: `${Math.round(val * 100)}%`,
+                                        backgroundColor: val >= 0.6 ? "#10b981" : val >= 0.4 ? "#fbbf24" : "#ef4444",
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="text-[9px] font-mono font-bold" style={{ color: val >= 0.6 ? "#10b981" : val >= 0.4 ? "#fbbf24" : "#ef4444" }}>
+                                    {Math.round(val * 100)}%
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-[9px] font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>—</span>
+                              )}
+                            </div>
+                          ))}
+                          <p className="text-[8px] italic text-right pt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
+                            Click row to collapse
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
                   {field.match_score != null && (
                     <MetaRow
@@ -168,6 +271,17 @@ export function EvidenceDrawer({ open, onClose, sourceUrl, field }: EvidenceDraw
                     }
                   />
                   <MetaRow label="Verification" value={verification} />
+                  {/* Contradiction warning if sources disagreed */}
+                  {field.contradiction_flag && field.contradiction_note && (
+                    <MetaRow
+                      label="⚠ Conflict"
+                      value={
+                        <span className="text-[10px] text-amber-400 font-semibold leading-snug block max-w-[220px] text-right">
+                          {field.contradiction_note.replace(/Conflicting values found:\s*/i, "")}
+                        </span>
+                      }
+                    />
+                  )}
                   <MetaRow
                     label="Used In"
                     value={

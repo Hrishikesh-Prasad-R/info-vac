@@ -9,7 +9,7 @@ import { RunnerStagePanel } from "@/components/analyst/RunnerStagePanel";
 import { ComparisonExportButton } from "@/components/analyst/ComparisonExportButton";
 import { EvidenceDrawer } from "./EvidenceDrawer";
 import { getExtractedFields, getProgramSources, sendComparisonChatMessage, getComparisonChatHistory } from "@/lib/api";
-import { splitNarrativeSegments, buildReferencesFromFields, calculateWordCount, WATERMARK_TEXT } from "@/lib/narrative";
+import { splitNarrativeSegments, parseBoldSegments, buildReferencesFromFields, calculateWordCount, WATERMARK_TEXT } from "@/lib/narrative";
 import { CitationBadge } from "./CitationBadge";
 import { ProgressCardLoader } from "./ProgressCardLoader";
 import { ChatWidget } from "./ChatWidget";
@@ -178,7 +178,12 @@ function ComparisonResults({
         <p key={i} className="text-xs leading-[1.75] mb-3" style={{ color: "rgba(5,28,44,0.8)" }}>
           {segments.map((seg, j) =>
             seg.type === "text" ? (
-              <span key={j}>{seg.text}</span>
+              // Wrap all segments — mixing raw strings and elements in array can drop strings
+              parseBoldSegments(seg.text).map((b, k) =>
+                b.bold
+                  ? <strong key={`${j}-b${k}`} style={{ color: "rgba(5,28,44,0.95)", fontWeight: 700 }}>{b.text}</strong>
+                  : <span key={`${j}-p${k}`}>{b.text}</span>
+              )
             ) : (
               <CitationBadge
                 key={j}
@@ -516,83 +521,65 @@ function ComparisonResults({
 
           {activeTab === "matrix" && (
             <div className="animate-in fade-in duration-200">
-              {/* Market Matrix Table */}
+              {/* Market Matrix Table — matches PDF layout */}
               <div className="mb-6">
                 <h2 className="text-xs font-bold mb-3 tracking-wide uppercase" style={{ color: "#051c2c", fontFamily: "var(--kobie-font-heading)" }}>
-                  Category Rankings & Matrix
+                  Category Rankings &amp; Matrix
                 </h2>
                 <div className="overflow-x-auto rounded-[8px] overflow-hidden border border-[#051c2c]/10">
                   <table className="min-w-full text-left text-xs">
                     <thead className="font-bold text-white" style={{ backgroundColor: "#051c2c", borderBottom: "1px solid rgba(5,28,44,0.1)" }}>
                       <tr>
-                        <th className="px-4 py-3 w-1/5">Category</th>
-                        {programNames.map((name) => (
-                          <th key={name} className="px-4 py-3 w-1/4">{name}</th>
-                        ))}
-                        <th className="px-4 py-3 w-1/5">Category Winner</th>
-                        <th className="px-4 py-3 w-1/10">Evidence</th>
+                        <th className="px-4 py-3" style={{ width: "18%" }}>Category</th>
+                        <th className="px-4 py-3" style={{ width: "62%" }}>Comparative Analysis</th>
+                        <th className="px-4 py-3" style={{ width: "20%" }}>Category Winner</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y text-xs divide-[#051c2c]/5">
                       {result.analysis.matrix.map((item, idx) => {
-                        const repFields: Record<string, { label: string; fieldName: string }> = {
-                          "Program Basics": { label: "Program Type", fieldName: "program_type" },
-                          "Earn Mechanics": { label: "Base Earn Rate", fieldName: "base_earn_rate" },
-                          "Burn Mechanics": { label: "Redemption Options", fieldName: "redemption_options" },
-                          "Tier System": { label: "Tiers & Status", fieldName: "tier_names" },
-                          "Digital Experience": { label: "App Store Rating", fieldName: "app_store_rating" },
-                          "Member Sentiment": { label: "Overall Rating", fieldName: "overall_rating" },
-                          "Competitive Position": { label: "Key Differentiators", fieldName: "key_differentiators" },
-                          "Partnerships": { label: "Partner Names", fieldName: "partner_names" }
-                        };
-                        const repInfo = repFields[item.category] || { label: item.category, fieldName: "notable_unstructured_details" };
                         const rowWinner = item.rankings?.[0] || "Tie";
-                        
+                        // Parse rationale text with citations + bold
+                        const rationaleSegments = splitNarrativeSegments(
+                          (item.rationale || "").replace(/\[[a-zA-Z0-9_]+\]/g, "").replace(/\s{2,}/g, " "),
+                          urlMap
+                        );
+
                         return (
                           <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f9fafb" }}>
-                            <td className="px-4 py-3 font-semibold align-top w-1/5" style={{ fontFamily: "var(--kobie-font-heading)", color: "#051c2c" }}>
+                            {/* Category */}
+                            <td className="px-4 py-3 font-semibold align-top" style={{ fontFamily: "var(--kobie-font-heading)", color: "#051c2c", width: "18%" }}>
                               {item.category}
-                              <span className="block text-[8px] font-mono mt-0.5" style={{ color: "rgba(5,28,44,0.4)" }}>{repInfo.label}</span>
                             </td>
-                            
-                            {programNames.map((_, pIdx) => {
-                              const field = comparedData[pIdx]?.fields.find(f => f.field_name === repInfo.fieldName);
-                              const val = field?.field_value || "—";
-                              return (
-                                <td key={pIdx} className="px-4 py-3 align-top leading-relaxed w-1/4" style={{ color: "rgba(5,28,44,0.7)" }}>
-                                  {val}
-                                </td>
-                              );
-                            })}
 
-                            <td className="px-4 py-3 align-top w-1/5">
+                            {/* Rationale with inline citations + bold */}
+                            <td className="px-4 py-3 align-top leading-[1.75]" style={{ color: "rgba(5,28,44,0.75)", width: "62%" }}>
+                              {rationaleSegments.map((seg, j) =>
+                                seg.type === "text" ? (
+                                  parseBoldSegments(seg.text).map((b, k) =>
+                                    b.bold
+                                      ? <strong key={`${j}-b${k}`} style={{ color: "rgba(5,28,44,0.95)", fontWeight: 700 }}>{b.text}</strong>
+                                      : <span key={`${j}-p${k}`}>{b.text}</span>
+                                  )
+                                ) : (
+                                  <CitationBadge
+                                    key={j}
+                                    num={seg.num ?? 1}
+                                    url={seg.url}
+                                    onClick={() => seg.url && setDrawerUrl(seg.url)}
+                                  />
+                                )
+                              )}
+                            </td>
+
+                            {/* Category Winner */}
+                            <td className="px-4 py-3 align-top" style={{ width: "20%" }}>
                               <span className="inline-block text-[9px] font-bold px-2 py-0.5 rounded" style={{
                                 backgroundColor: rowWinner !== "Tie" ? "rgba(253,127,79,0.12)" : "rgba(5,28,44,0.05)",
                                 color: rowWinner !== "Tie" ? "#fd7f4f" : "rgba(5,28,44,0.5)",
                                 border: rowWinner !== "Tie" ? "1px solid rgba(253,127,79,0.25)" : "1px solid rgba(5,28,44,0.08)"
                               }}>
-                                {rowWinner === "Tie" ? "Tie" : `🏆 ${rowWinner.split(' ')[0]}`}
+                                {rowWinner === "Tie" ? "Tie" : `🏆 ${rowWinner}`}
                               </span>
-                            </td>
-
-                            <td className="px-4 py-3 align-top w-1/10">
-                              {(() => {
-                                const winnerIdx = programNames.indexOf(rowWinner);
-                                if (winnerIdx !== -1) {
-                                  const field = comparedData[winnerIdx]?.fields.find(f => f.field_name === repInfo.fieldName);
-                                  const num = field?.source_url ? urlMap.get(field.source_url) : null;
-                                  if (num) {
-                                    return (
-                                      <CitationBadge
-                                        num={num}
-                                        url={field?.source_url}
-                                        onClick={() => field?.source_url && setDrawerUrl(field.source_url)}
-                                      />
-                                    );
-                                  }
-                                }
-                                return <span className="text-black/20">—</span>;
-                              })()}
                             </td>
                           </tr>
                         );

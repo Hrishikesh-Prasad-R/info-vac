@@ -22,6 +22,8 @@ _PATH_PATTERNS: list[tuple[str, str]] = [
     (r"faq|faqs|help\.|support\.|questions|howto|how-to", "faq"),
     (r"press|newsroom|press-release|ir\.|investor", "press"),
     (r"review|rating|feedback|app-store", "app_review"),
+    # Third-party blog/editorial content — classify as news, not homepage/benefits
+    (r"/blog/|/blogs/|/article/|/articles/|/post/|/posts/|/editorial/", "news"),
 ]
 
 # Priority 3: Title keywords — medium confidence
@@ -29,7 +31,9 @@ _TITLE_KEYWORDS: dict[str, list[str]] = {
     "tnc":        ["terms", "conditions", "legal", "policy", "rules", "agreement"],
     "faq":        ["faq", "frequently asked", "help center", "support", "how to"],
     "press":      ["press release", "announces", "launches", "expands", "partners with"],
-    "news":       ["review", "guide", "best credit", "comparison", "ranking", "worth it"],
+    "news":       ["review", "guide", "best credit", "comparison", "ranking", "worth it",
+                   "breakdown", "complete guide", "vs ", "vs.", "explained", "overview",
+                   "analysis", "deep dive", "deep-dive", "top 10", "pros and cons"],
     "app_review": ["app review", "ios", "android rating", "app store"],
 }
 

@@ -7,6 +7,7 @@ import type { Narrative, ExtractedField } from "@/types/api";
 import {
   parseNarrative,
   splitNarrativeSegments,
+  parseBoldSegments,
   type ParsedReference,
   calculateWordCount,
   WATERMARK_TEXT,
@@ -65,7 +66,12 @@ function groupNarrativeBySections(
         >
           {segments.map((seg, j) =>
             seg.type === "text" ? (
-              <span key={j}>{seg.text}</span>
+              // Wrap all segments — mixing raw strings and elements in an array can drop strings
+              parseBoldSegments(seg.text).map((b, k) =>
+                b.bold
+                  ? <strong key={`${j}-b${k}`} style={{ color: "rgba(9,37,56,0.95)", fontWeight: 700 }}>{b.text}</strong>
+                  : <span key={`${j}-p${k}`}>{b.text}</span>
+              )
             ) : (
               <CitationBadge
                 key={j}

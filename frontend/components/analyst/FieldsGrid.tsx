@@ -180,10 +180,10 @@ export function FieldsGrid({ fields, externalFilter = "", hideFilterInput = fals
                 className="last:border-0 transition-colors"
                 style={{
                   borderBottom: '1px solid rgba(255,255,255,0.06)',
-                  backgroundColor: idx % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent',
+                  backgroundColor: idx % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.12)',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.035)')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = idx % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent')}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(253,127,79,0.06)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = idx % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.12)')}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell

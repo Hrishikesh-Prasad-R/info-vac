@@ -54,6 +54,7 @@ export interface ExtractedField {
   confidence: number | null;
   source_id: string | null;
   source_url: string | null;
+  source_type: string | null;
   access_date: string | null;
   contradiction_flag: boolean;
   contradiction_note: string | null;

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
-import { RefreshCw, Loader2, BarChart2 } from "lucide-react";
+import { RefreshCw, Loader2, BarChart2, Trash2, Search, AlertTriangle, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { ConfidenceBarChart } from "@/components/admin/ConfidenceBarChart";
 import { SourceTracker } from "@/components/admin/SourceTracker";
 import { ComparatorPicker } from "@/components/admin/ComparatorPicker";
 import { FieldsGrid } from "@/components/analyst/FieldsGrid";
-import { checkHealth } from "@/lib/api";
+import { checkHealth, deleteProgram, searchPrograms } from "@/lib/api";
 import { API_BASE } from "@/lib/api";
 import type { Program, ExtractedField } from "@/types/api";
 import { Toaster } from "@/components/ui/sonner";
@@ -66,6 +66,225 @@ async function fetchAllFields(): Promise<ExtractedField[]> {
     return [];
   }
 }
+
+// ── Delete Program Panel ──────────────────────────────────────────────────────
+
+function DeleteProgramPanel({ onDeleted }: { onDeleted: () => void }) {
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<Program[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showDrop, setShowDrop] = useState(false);
+  const [selected, setSelected] = useState<Program | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) { setSuggestions([]); setShowDrop(false); return; }
+    setSearching(true);
+    const t = setTimeout(() => {
+      searchPrograms(q).then(data => { setSuggestions(data); setShowDrop(true); }).finally(() => setSearching(false));
+    }, 200);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setShowDrop(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  function handleSelect(prog: Program) {
+    setSelected(prog);
+    setQuery(prog.name);
+    setShowDrop(false);
+  }
+
+  async function handleConfirmDelete() {
+    if (!selected) return;
+    setDeleting(true);
+    try {
+      const result = await deleteProgram(selected.id);
+      toast.success(`"${result.program_name}" deleted`, {
+        description: result.qdrant_cleaned
+          ? "SQL + Qdrant vectors removed."
+          : "SQL removed. Qdrant cleanup failed (check backend logs).",
+      });
+      setSelected(null);
+      setQuery("");
+      setSuggestions([]);
+      setConfirming(false);
+      onDeleted();
+    } catch (err: unknown) {
+      toast.error("Delete failed", { description: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <div
+      className="rounded-[10px] p-5 space-y-4"
+      style={{ backgroundColor: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.2)" }}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2.5">
+        <Trash2 size={14} style={{ color: "#ef4444" }} strokeWidth={1.5} />
+        <span className="text-sm font-bold" style={{ color: "#ef4444", fontFamily: "var(--kobie-font-heading)" }}>
+          Delete Program
+        </span>
+        <span className="text-[10px] text-white/30 ml-1">— permanently removes all SQL data and Qdrant vectors</span>
+      </div>
+
+      {/* Search input */}
+      <div ref={containerRef} className="relative">
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2" size={14} strokeWidth={1.5} style={{ color: "rgba(255,255,255,0.25)" }} />
+          {searching && <Loader2 size={13} className="animate-spin absolute right-3.5 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.25)" }} />}
+          <input
+            value={query}
+            onChange={e => { setQuery(e.target.value); setSelected(null); setShowDrop(true); }}
+            onFocus={() => { if (suggestions.length > 0) setShowDrop(true); }}
+            onKeyDown={e => { if (e.key === "Enter" && selected) { e.preventDefault(); setConfirming(true); } }}
+            placeholder="Search program to delete…"
+            className="w-full h-10 pl-10 pr-4 text-sm rounded-[8px] outline-none transition-all"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(239,68,68,0.3)",
+              color: "rgba(255,255,255,0.85)",
+            }}
+          />
+        </div>
+
+        {/* Dropdown */}
+        {showDrop && suggestions.length > 0 && (
+          <div
+            className="absolute left-0 right-0 top-full mt-1 z-50 overflow-y-auto max-h-56 rounded-[8px] shadow-2xl"
+            style={{ backgroundColor: "#0d2d3f", border: "1px solid rgba(255,255,255,0.12)" }}
+          >
+            {suggestions.map(prog => (
+              <div
+                key={prog.id}
+                onClick={() => handleSelect(prog)}
+                className="px-4 py-2.5 flex items-center justify-between cursor-pointer transition-colors border-b border-white/5"
+                style={{ color: "rgba(255,255,255,0.85)" }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.08)")}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
+              >
+                <div>
+                  <p className="text-[11px] font-bold">{prog.name}</p>
+                  <p className="text-[9px] font-mono mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>{prog.id}</p>
+                </div>
+                <span className="text-[9px] text-red-400/70 font-semibold shrink-0 ml-3">Select →</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Selected program chip */}
+      {selected && (
+        <div
+          className="flex items-center justify-between px-3 py-2 rounded-[6px]"
+          style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}
+        >
+          <div>
+            <p className="text-xs font-bold" style={{ color: "#ef4444", fontFamily: "var(--kobie-font-heading)" }}>{selected.name}</p>
+            <p className="text-[9px] font-mono mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>{selected.id}</p>
+          </div>
+          <button
+            onClick={() => { setSelected(null); setQuery(""); }}
+            className="ml-3 p-1 rounded transition-colors"
+            style={{ color: "rgba(255,255,255,0.3)" }}
+            onMouseEnter={e => (e.currentTarget.style.color = "#ef4444")}
+            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
+
+      {/* Delete trigger button */}
+      {selected && (
+        <button
+          onClick={() => setConfirming(true)}
+          className="h-9 px-5 text-xs font-bold rounded-[6px] flex items-center gap-2 transition-all"
+          style={{
+            fontFamily: "var(--kobie-font-heading)",
+            backgroundColor: "rgba(239,68,68,0.15)",
+            border: "1px solid rgba(239,68,68,0.35)",
+            color: "#ef4444",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.25)"; }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.15)"; }}
+        >
+          <Trash2 size={12} strokeWidth={2} />
+          Delete "{selected.name}"
+        </button>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirming && selected && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.75)" }}>
+          <div
+            className="w-full max-w-sm rounded-[12px] p-6 space-y-4 shadow-2xl"
+            style={{ backgroundColor: "#0d1f2d", border: "1px solid rgba(239,68,68,0.35)" }}
+          >
+            <div className="flex items-start gap-3">
+              <AlertTriangle size={20} style={{ color: "#ef4444" }} className="shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-white" style={{ fontFamily: "var(--kobie-font-heading)" }}>
+                  Are you sure?
+                </p>
+                <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>
+                  This will permanently delete <span className="text-white font-semibold">"{selected.name}"</span> and all its sources, fields, narratives, and Qdrant vectors. This cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setConfirming(false)}
+                disabled={deleting}
+                className="h-9 px-4 text-xs font-bold rounded-[6px] transition-colors"
+                style={{
+                  fontFamily: "var(--kobie-font-heading)",
+                  color: "rgba(255,255,255,0.5)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "transparent",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                className="h-9 px-5 text-xs font-bold rounded-[6px] flex items-center gap-2 transition-all disabled:opacity-60"
+                style={{
+                  fontFamily: "var(--kobie-font-heading)",
+                  backgroundColor: "#ef4444",
+                  color: "#ffffff",
+                  border: "1px solid #ef4444",
+                }}
+              >
+                {deleting ? (
+                  <><Loader2 size={12} className="animate-spin" /> Deleting…</>
+                ) : (
+                  <><Trash2 size={12} /> Yes, Delete</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main AdminDashboard component ─────────────────────────────────────────────
 
 export default function AdminDashboard() {
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -424,6 +643,14 @@ export default function AdminDashboard() {
               </TabsContent>
             </div>
           </Tabs>
+        </div>
+
+        {/* ── Danger Zone ── */}
+        <div className="space-y-2">
+          <p className="text-[10px] uppercase font-bold tracking-widest" style={{ color: "rgba(239,68,68,0.6)", fontFamily: "var(--kobie-font-heading)" }}>
+            Danger Zone
+          </p>
+          <DeleteProgramPanel onDeleted={refresh} />
         </div>
       </main>
     </div>

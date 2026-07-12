@@ -152,6 +152,11 @@ export async function getComparisonChatHistory(
   return apiFetch<ChatHistory>(`/api/comparisons/${comparisonId}/chat`);
 }
 
+/** Hard-delete a program and all its data (SQL cascade + Qdrant cleanup). */
+export async function deleteProgram(programId: string): Promise<{ deleted: boolean; program_name: string; qdrant_cleaned: boolean }> {
+  return apiFetch(`/api/programs/${programId}`, { method: "DELETE" });
+}
+
 // ── Health ────────────────────────────────────────────────────────────────────
 
 /** Simple health check. Returns true if the backend is reachable. */

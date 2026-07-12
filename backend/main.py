@@ -116,6 +116,7 @@ class ExtractedFieldResponse(BaseModel):
     confidence: Optional[float] = None
     source_id: Optional[uuid.UUID] = None
     source_url: Optional[str] = None
+    source_type: Optional[str] = None
     access_date: Optional[datetime] = None
     contradiction_flag: bool
     contradiction_note: Optional[str] = None
@@ -173,7 +174,7 @@ async def list_all_fields(db: AsyncSession = Depends(get_db)):
 async def get_program_fields(program_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """Return all extracted fields for a program, keeping only the latest run per field_name."""
     result = await db.execute(
-        select(ExtractedField, Source.url.label("source_url"))
+        select(ExtractedField, Source.url.label("source_url"), Source.source_type.label("source_type"))
         .outerjoin(Source, ExtractedField.source_id == Source.id)
         .where(ExtractedField.program_id == program_id)
     )
@@ -182,6 +183,7 @@ async def get_program_fields(program_id: uuid.UUID, db: AsyncSession = Depends(g
     for row in result.all():
         field_obj = row[0]
         field_obj.source_url = row[1]
+        field_obj.source_type = row[2]
         fields.append(field_obj)
         
     return ExtractedField.get_latest_only(fields)
@@ -213,6 +215,84 @@ async def get_program_events(program_id: uuid.UUID, db: AsyncSession = Depends(g
             )
         )
     return response
+
+
+@app.delete("/api/programs/{program_id}")
+async def delete_program(program_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    """Hard-delete a program and ALL its data from SQL (cascade) and Qdrant vector DB."""
+    import traceback
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        prog = await db.get(Program, program_id)
+        if prog is None:
+            raise HTTPException(status_code=404, detail=f"Program {program_id} not found.")
+        prog_name = prog.name
+
+        # 1. Delete Qdrant vectors (best-effort — don't fail if Qdrant is down)
+        qdrant_ok = False
+        try:
+            from backend.qdrant_client import get_qdrant_client
+            from qdrant_client.http import models as qmodels
+            qclient = get_qdrant_client()
+            qclient.delete(
+                collection_name="sources",
+                points_selector=qmodels.FilterSelector(
+                    filter=qmodels.Filter(
+                        must=[qmodels.FieldCondition(
+                            key="program_id",
+                            match=qmodels.MatchValue(value=str(program_id))
+                        )]
+                    )
+                )
+            )
+            qdrant_ok = True
+        except Exception as exc:
+            logger.warning(f"Qdrant cleanup failed for {program_id}: {exc}")
+
+        # 2. Delete comparisons and extracted_fields first to prevent FK constraint violations
+        from sqlalchemy import text
+        try:
+            # Delete comparisons where this program is program_a or program_b
+            await db.execute(
+                text("DELETE FROM comparisons WHERE program_a_id = :pid OR program_b_id = :pid"),
+                {"pid": program_id}
+            )
+            # Delete comparisons where this program is in the program_ids list
+            await db.execute(
+                text("DELETE FROM comparisons WHERE program_ids IS NOT NULL AND program_ids::jsonb ? :pid_str"),
+                {"pid_str": str(program_id)}
+            )
+            # Delete conversations referencing this program first (prevents setting program_id to NULL on delete)
+            await db.execute(
+                text("DELETE FROM conversations WHERE program_id = :pid"),
+                {"pid": program_id}
+            )
+            # Delete extracted fields for this program (this removes FK reference to sources.id)
+            await db.execute(
+                text("DELETE FROM extracted_fields WHERE program_id = :pid"),
+                {"pid": program_id}
+            )
+            await db.flush()
+        except Exception as exc:
+            logger.warning(f"Pre-deletion cleanup failed for {program_id}: {exc}")
+            # Continue and let db.delete fail if it must, or let it rollback
+
+        # 3. SQL delete — cascade handles sources, events, narratives, conversations -> messages
+        await db.delete(prog)
+        await db.commit()
+
+        return {
+            "deleted": True,
+            "program_id": str(program_id),
+            "program_name": prog_name,
+            "qdrant_cleaned": qdrant_ok,
+        }
+    except Exception as main_exc:
+        logger.error(f"EXCEPTION IN DELETE ROUTE: {main_exc}\n{traceback.format_exc()}")
+        if isinstance(main_exc, HTTPException):
+            raise main_exc
+        raise HTTPException(status_code=500, detail=str(main_exc))
 
 
 @app.get("/api/programs/search", response_model=list[ProgramResponse])
