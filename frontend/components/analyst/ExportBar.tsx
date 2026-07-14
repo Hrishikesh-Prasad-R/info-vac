@@ -425,7 +425,7 @@ export async function exportComparisonPDF(comparison: any, programNames: string[
 
         {/* Category Rankings & Matrix */}
         <Text minPresenceAhead={30} style={styles.sectionHeading}>Category Rankings & Matrix</Text>
-        <View style={styles.table}>
+        <View minPresenceAhead={80} style={styles.table}>
           <View fixed style={styles.tableHeaderRow}>
             <View style={[styles.tableHeaderCellContainer, { width: "24%", borderRightWidth: 1, borderRightColor: "#FD7F4F" }]}>
               <Text style={styles.tableHeaderCell}>Category</Text>
@@ -454,7 +454,7 @@ export async function exportComparisonPDF(comparison: any, programNames: string[
 
         {/* Detailed Parameters Table */}
         <Text minPresenceAhead={30} style={styles.sectionHeading}>Side-by-Side Parameters</Text>
-        <View style={styles.table}>
+        <View minPresenceAhead={80} style={styles.table}>
           <View fixed style={styles.tableHeaderRow}>
             <View style={[styles.tableHeaderCellContainer, { width: categoryWidth, borderRightWidth: 1, borderRightColor: "#FD7F4F" }]}>
               <Text style={styles.tableHeaderCell}>Loyalty Parameter</Text>
@@ -500,7 +500,7 @@ export async function exportComparisonPDF(comparison: any, programNames: string[
         </View>
 
         {/* Individual Highlights */}
-        <Text minPresenceAhead={30} style={styles.sectionHeading}>Program Highlights</Text>
+        <Text minPresenceAhead={50} style={styles.sectionHeading}>Program Highlights</Text>
         <View style={styles.highlightsContainer}>
           {programNames.map((pName, pIdx) => (
             <View key={pIdx} wrap={true} style={styles.highlightCol}>
@@ -530,8 +530,9 @@ export async function exportComparisonPDF(comparison: any, programNames: string[
         {buildParagraphsWithCitations(analysis.strategic_recommendations)}
 
         {/* Segment Positioning Playbook */}
-        <Text minPresenceAhead={30} style={styles.sectionHeading}>Segment Positioning Playbook</Text>
-        <View wrap={false} style={{ flexDirection: "row", marginTop: 6, marginBottom: 10 }}>
+        <View wrap={false} minPresenceAhead={60}>
+          <Text style={styles.sectionHeading}>Segment Positioning Playbook</Text>
+          <View style={{ flexDirection: "row", marginTop: 6, marginBottom: 10 }}>
           <View style={{ flex: 1, borderRadius: 4, borderWidth: 1, borderStyle: "solid", borderColor: "rgba(253,127,79,0.22)", backgroundColor: "#FFFFFF", padding: 10, marginRight: 12 }}>
             <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold", color: "#FD7F4F", textTransform: "uppercase", marginBottom: 4 }}>QSR Client Strategy</Text>
             <Text style={{ fontSize: 8, lineHeight: 1.4, color: "#051C2C" }}>
@@ -544,7 +545,8 @@ export async function exportComparisonPDF(comparison: any, programNames: string[
               Deploy co-branded partnerships, tiered soft benefits (free shipping), and high-ticket reward redemptions for customer lifetime value.
             </Text>
           </View>
-        </View>
+          </View>{/* end row */}
+        </View>{/* end wrap={false} Segment block */}
 
         {references.length === 0 && <PDFWatermark />}
       </Page>
@@ -564,7 +566,7 @@ export async function exportComparisonPDF(comparison: any, programNames: string[
               const fullUrl = getFullUrl(ref.url, allFields);
 
               return (
-                <View key={ref.url} wrap={true} style={styles.refItem} id={`ref-${ref.num}`}>
+                <View key={`${ref.num}-${ref.url}`} wrap={true} style={styles.refItem} id={`ref-${ref.num}`}>
                   <Link src={fullUrl} style={[styles.refNum, { textDecoration: "none" }]}>
                     [{ref.num}]
                   </Link>
