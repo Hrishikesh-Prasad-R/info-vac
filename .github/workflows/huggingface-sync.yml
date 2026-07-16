@@ -19,9 +19,13 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          rm -rf documentation frontend trial_UIs UI_example graphify-out
+          rm -rf .git
+          git init
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git rm -rf --ignore-unmatch documentation frontend trial_UIs UI_example graphify-out
-          git commit -m "chore: strip non-backend assets for Hugging Face deployment"
+          git add .
+          git commit -m "deploy: clean backend deployment"
           git push --force https://HrishikeshRPrasad:$HF_TOKEN@huggingface.co/spaces/HrishikeshRPrasad/infovac-backend HEAD:refs/heads/main
+
 
