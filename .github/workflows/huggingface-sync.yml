@@ -3,6 +3,13 @@ name: Sync to Hugging Face Spaces
 on:
   push:
     branches: [main]
+    paths:
+      - 'backend/**'
+      - 'orchestrator/**'
+      - 'alembic/**'
+      - 'requirements*.txt'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
   workflow_dispatch:
 
 jobs:
