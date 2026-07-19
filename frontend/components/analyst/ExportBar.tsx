@@ -95,7 +95,7 @@ const createSharedStyles = (StyleSheet: any) =>
     citationLink: { fontSize: 8.5, color: "#FD7F4F", fontFamily: "Helvetica-Bold", textDecoration: "none" },
     
     // Table layout styles (Comparison specific)
-    table: { marginTop: 10, marginBottom: 15, borderBottom: "1px solid #FD7F4F", borderRadius: 4, overflow: "hidden" },
+    table: { marginTop: 10, marginBottom: 15 },
     tableHeaderRow: { flexDirection: "row", backgroundColor: "#051C2C", borderTop: "1px solid #FD7F4F", borderLeft: "1px solid #FD7F4F", borderRight: "1px solid #FD7F4F", borderBottom: "1px solid #FD7F4F" },
     tableRow: { flexDirection: "row", borderLeft: "1px solid #FD7F4F", borderRight: "1px solid #FD7F4F", borderBottom: "1px solid #F6E2D9", minHeight: 28, backgroundColor: "#FFFFFF" },
     tableRowAlt: { flexDirection: "row", borderLeft: "1px solid #FD7F4F", borderRight: "1px solid #FD7F4F", borderBottom: "1px solid #F6E2D9", minHeight: 28, backgroundColor: "#FFF9F6" },
@@ -425,8 +425,8 @@ export async function exportComparisonPDF(comparison: any, programNames: string[
 
         {/* Category Rankings & Matrix */}
         <Text minPresenceAhead={30} style={styles.sectionHeading}>Category Rankings & Matrix</Text>
-        <View minPresenceAhead={80} style={styles.table}>
-          <View fixed style={styles.tableHeaderRow}>
+        <View style={styles.table}>
+          <View style={styles.tableHeaderRow}>
             <View style={[styles.tableHeaderCellContainer, { width: "24%", borderRightWidth: 1, borderRightColor: "#FD7F4F" }]}>
               <Text style={styles.tableHeaderCell}>Category</Text>
             </View>
@@ -437,8 +437,13 @@ export async function exportComparisonPDF(comparison: any, programNames: string[
 
           {analysis.matrix.map((item: any, i: number) => {
             const isAlt = i % 2 !== 0;
+            const isLast = i === analysis.matrix.length - 1;
+            const rowStyle = [
+              isAlt ? styles.tableRowAlt : styles.tableRow,
+              isLast && { borderBottomColor: "#FD7F4F", borderBottomWidth: 1 }
+            ];
             return (
-              <View key={i} wrap={false} style={isAlt ? styles.tableRowAlt : styles.tableRow}>
+              <View key={i} wrap={false} style={rowStyle}>
                 <View style={[styles.tableCellCategory, { width: "24%" }]}>
                   <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: "#051C2C" }}>{item.category}</Text>
                 </View>
@@ -453,9 +458,9 @@ export async function exportComparisonPDF(comparison: any, programNames: string[
         </View>
 
         {/* Detailed Parameters Table */}
-        <Text minPresenceAhead={30} style={styles.sectionHeading}>Side-by-Side Parameters</Text>
-        <View minPresenceAhead={80} style={styles.table}>
-          <View fixed style={styles.tableHeaderRow}>
+        <Text minPresenceAhead={85} style={styles.sectionHeading}>Side-by-Side Parameters</Text>
+        <View style={styles.table}>
+          <View style={styles.tableHeaderRow}>
             <View style={[styles.tableHeaderCellContainer, { width: categoryWidth, borderRightWidth: 1, borderRightColor: "#FD7F4F" }]}>
               <Text style={styles.tableHeaderCell}>Loyalty Parameter</Text>
             </View>
@@ -471,8 +476,13 @@ export async function exportComparisonPDF(comparison: any, programNames: string[
 
           {keyFieldsList.map((fItem, i) => {
             const isAlt = i % 2 !== 0;
+            const isLast = i === keyFieldsList.length - 1;
+            const rowStyle = [
+              isAlt ? styles.tableRowAlt : styles.tableRow,
+              isLast && { borderBottomColor: "#FD7F4F", borderBottomWidth: 1 }
+            ];
             return (
-              <View key={i} wrap={false} style={isAlt ? styles.tableRowAlt : styles.tableRow}>
+              <View key={i} wrap={false} style={rowStyle}>
                 <View style={[styles.tableCellCategory, { width: categoryWidth }]}>
                   <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: "#051C2C" }}>{fItem.label}</Text>
                 </View>
@@ -480,9 +490,9 @@ export async function exportComparisonPDF(comparison: any, programNames: string[
                   const field = programData[pIdx]?.fields.find((f: any) => f.field_name === fItem.name);
                   const val = field?.field_value || "—";
                   const num = field?.source_url ? urlMap.get(field.source_url) : null;
-                  const isLast = pIdx === programNames.length - 1;
+                  const isLastCol = pIdx === programNames.length - 1;
                   return (
-                    <View key={pIdx} style={[styles.tableCellContent, { width: programColWidth, borderRightWidth: isLast ? 0 : 1 }]}>
+                    <View key={pIdx} style={[styles.tableCellContent, { width: programColWidth, borderRightWidth: isLastCol ? 0 : 1 }]}>
                       <Text style={{ fontSize: 8, lineHeight: 1.4, color: "#051C2C" }}>
                         {val}
                         {num && (
